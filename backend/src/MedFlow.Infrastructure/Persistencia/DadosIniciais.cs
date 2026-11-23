@@ -29,7 +29,21 @@ public static class DadosIniciais
             "Rua das Acácias, 120 — Vila Mariana, São Paulo/SP — 04101-000");
         carlos.RegistrarConsentimento(TipoConsentimento.TermosDeUso, "2026.1", agora);
         carlos.RegistrarConsentimento(TipoConsentimento.DadosDeSaude, "2026.1", agora);
+        // Pacientes extras para a demonstração: cada um tem receita aprovada e pode montar a sua Box
+        // (a regra "uma Box em preparação por paciente" continua valendo para todos).
+        var extras = new[]
+        {
+            NovoUsuario("Mariana Alves", "mariana@email.com", "935.411.347-80", PerfilUsuario.Paciente, "Av. Paulista, 1500, ap. 82 — Bela Vista, São Paulo/SP — 01310-200"),
+            NovoUsuario("Paulo Ribeiro", "paulo@email.com", "453.178.287-91", PerfilUsuario.Paciente, "Rua Augusta, 900 — Consolação, São Paulo/SP — 01304-001"),
+            NovoUsuario("Beatriz Costa", "beatriz@email.com", "862.883.667-57", PerfilUsuario.Paciente, "Rua Vergueiro, 2200 — Vila Mariana, São Paulo/SP — 04101-300"),
+        };
+        foreach (var x in extras)
+        {
+            x.RegistrarConsentimento(TipoConsentimento.TermosDeUso, "2026.1", agora);
+            x.RegistrarConsentimento(TipoConsentimento.DadosDeSaude, "2026.1", agora);
+        }
         db.Usuarios.AddRange(juliana, bruno, rafael, carlos);
+        db.Usuarios.AddRange(extras);
 
         var hoje = agora.Date;
         Medicamento Med(string nome, string principio, string concentracao, string forma, Tarja tarja, int minimo, bool controlado = false) =>
@@ -88,6 +102,13 @@ public static class DadosIniciais
         var receita = new Receita(carlos.Id, caminho, "receita-carlos.pdf", "application/pdf", pdf.Length, agora.AddDays(-10));
         receita.Aprovar(juliana.Id, hoje.AddMonths(5), agora.AddDays(-9), "Dra. Marina Teixeira", "CRM 123456/SP", hoje.AddDays(-12));
         db.Receitas.Add(receita);
+        foreach (var x in extras)
+        {
+            var arquivo = await storage.SalvarAsync(pdf, ".pdf", ct);
+            var r = new Receita(x.Id, arquivo, $"receita-{x.Nome.Split(' ')[0].ToLowerInvariant()}.pdf", "application/pdf", pdf.Length, agora.AddDays(-8));
+            r.Aprovar(juliana.Id, hoje.AddMonths(5), agora.AddDays(-7), "Dra. Marina Teixeira", "CRM 123456/SP", hoje.AddDays(-10));
+            db.Receitas.Add(r);
+        }
         await db.SaveChangesAsync(ct);
     }
 }

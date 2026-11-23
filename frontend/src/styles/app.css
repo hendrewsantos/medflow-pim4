@@ -594,9 +594,9 @@ pre.json { background: var(--surface-2); border: 1px solid var(--line); border-r
   --side-ink-2: #3d546b;
   --shadow: none;
 }
-.card { background: transparent; border: 0; border-top: 1px solid var(--line-strong); border-radius: 0; box-shadow: none; padding: 18px 0 6px; }
-.kpis { gap: 4px 0; border-top: 1px solid var(--line-strong); padding-top: 4px; }
-.kpi { background: transparent; border: 0; border-radius: 0; padding: 12px 20px 12px 0; }
+.card { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px; box-shadow: none; padding: 20px 22px; }
+.kpis { gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px; padding: 14px 18px; }
 .barra { background: var(--surface); }
 .pub-passos .card { border-top: 2px solid var(--line-strong); }
 
@@ -667,3 +667,38 @@ body { background: transparent; }
 .sache.proxima { border-color: var(--brand); border-bottom-color: var(--brand); }
 .sache.proxima .sache-topo { color: var(--brand); }
 :root[data-theme="dark"] .sache { --bg-serrilha: #0e2330; }
+
+/* ── Celular e tablet: o menu vira uma gaveta lateral, com cortina e entrada escalonada ── */
+.hamb, .quem-gaveta, .cortina { display: none; }
+@media (max-width: 980px) {
+  .barra { flex-wrap: nowrap; gap: 12px; padding-block: 8px; }
+  .hamb {
+    display: inline-flex; flex-direction: column; justify-content: center; gap: 5px; width: 44px; height: 44px; padding: 0 11px;
+    border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface); cursor: pointer; flex: none;
+  }
+  .hamb span { display: block; height: 2px; border-radius: 2px; background: var(--ink); transition: transform .25s ease, opacity .2s ease; }
+  .hamb[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamb[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+  .hamb[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  .barra .acoes { margin-left: auto; gap: 8px; }
+  .barra .acoes .quem, .barra .acoes > .subtle { display: none; }
+  .barra .nav {
+    position: fixed; z-index: 60; top: 0; bottom: 0; left: 0; width: min(300px, 84vw); order: 0; flex-basis: auto; flex: none;
+    flex-direction: column; gap: 4px; overflow-y: auto; background: var(--surface); border-right: 1px solid var(--line-strong);
+    padding: max(18px, env(safe-area-inset-top, 0px)) 14px 18px; transform: translateX(-102%); visibility: hidden;
+    transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .3s;
+  }
+  .barra .nav.aberto { transform: none; visibility: visible; transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s; }
+  .barra .nav a { width: 100%; padding: 13px 12px; font-size: var(--t-md); opacity: 0; transform: translateX(-12px); }
+  .barra .nav.aberto a { opacity: 1; transform: none; transition: opacity .3s ease, transform .3s ease; transition-delay: calc(var(--i) * 45ms + 80ms); }
+  .barra .nav .badge { margin-left: auto; }
+  .quem-gaveta { display: flex; flex-direction: column; gap: 10px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-2); font-size: var(--t-sm); }
+  .quem-gaveta strong { display: block; color: var(--ink); font-size: var(--t-md); }
+  .quem-gaveta button { align-self: flex-start; background: none; border: 1px solid var(--line-strong); color: var(--ink); border-radius: 8px; padding: 9px 16px; cursor: pointer; font-weight: 700; }
+  .cortina { display: block; position: fixed; inset: 0; z-index: 50; background: rgba(11, 37, 69, .38); opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+  .cortina.aberto { opacity: 1; pointer-events: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .barra .nav, .barra .nav a, .cortina, .hamb span { transition: none !important; }
+  .barra .nav a { opacity: 1; transform: none; }
+}

@@ -279,6 +279,22 @@ class LinhaDoTempoViewModel(private val repo: PedidosRepository, private val ped
 
     init {
         carregar()
+        acompanhar()
+    }
+
+    /** Atualiza o status sozinho, sem o usuário puxar a tela: a Box mudou de etapa, a tela muda junto. */
+    private fun acompanhar() {
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(6_000)
+                val atual = _estado.value
+                if (atual.carregando || atual.pagando) continue
+                val r = repo.detalhe(pedidoId)
+                if (r is Resultado.Ok && r.valor != atual.pedido) {
+                    _estado.value = _estado.value.copy(pedido = r.valor, erro = null)
+                }
+            }
+        }
     }
 
     fun carregar() {

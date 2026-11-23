@@ -10,6 +10,8 @@ export const SENHA_DEMO = 'MedFlow2026'
 
 export const PERSONAS = [
   { email: 'carlos@email.com', nome: 'Carlos Mendes', perfil: 'Paciente', papel: 'Paciente · 58 anos, 4 medicamentos de uso contínuo' },
+  { email: 'mariana@email.com', nome: 'Mariana Alves', perfil: 'Paciente', papel: 'Paciente · receita aprovada, ainda sem Box' },
+  { email: 'paulo@email.com', nome: 'Paulo Ribeiro', perfil: 'Paciente', papel: 'Paciente · receita aprovada, ainda sem Box' },
   { email: 'juliana@medflow.com.br', nome: 'Juliana Prado', perfil: 'Administrador', papel: 'Farmacêutica responsável técnica · analisa receitas' },
   { email: 'bruno@medflow.com.br', nome: 'Bruno Lima', perfil: 'Funcionario', papel: 'Operador da farmácia · separa as Boxes e cuida do estoque' },
   { email: 'rafael@medflow.com.br', nome: 'Rafael Souza', perfil: 'Entregador', papel: 'Entregador · rotas pelo celular' },
@@ -50,6 +52,12 @@ export async function criarDemonstracao(agoraReal = new Date(), { pagamento = fa
     endereco: 'Rua Vergueiro, 3185 — Vila Mariana, São Paulo/SP — 04101-300', telefone: '(11) 94433-8820' })
   const lucia = await ops.cadastrarUsuario({ nome: 'Lúcia Martins', email: 'lucia.martins@email.com', cpf: cpf('714602380'), senha: SENHA_DEMO, perfil: 'Paciente', consentimentos: termos,
     endereco: 'Rua Loefgren, 1560 — Vila Clementino, São Paulo/SP — 04040-001', telefone: '(11) 93322-6654' })
+
+  // Pacientes extras para a demonstração: receita já aprovada e nenhuma Box em andamento.
+  const mariana = await ops.cadastrarUsuario({ nome: 'Mariana Alves', email: 'mariana@email.com', cpf: cpf('246813579'), senha: SENHA_DEMO, perfil: 'Paciente', consentimentos: termos,
+    endereco: 'Av. Paulista, 1500, ap. 82 — Bela Vista, São Paulo/SP — 01310-200', telefone: '(11) 92211-5540' })
+  const paulo = await ops.cadastrarUsuario({ nome: 'Paulo Ribeiro', email: 'paulo@email.com', cpf: cpf('135792468'), senha: SENHA_DEMO, perfil: 'Paciente', consentimentos: termos,
+    endereco: 'Rua Augusta, 900 — Consolação, São Paulo/SP — 01304-001', telefone: '(11) 91100-3382' })
 
   // ── Catálogo ──
   const med = (nome, principioAtivo, concentracao, forma, tarja, nivelMinimo, controleEspecial = false, extra = {}) =>
@@ -132,6 +140,8 @@ export async function criarDemonstracao(agoraReal = new Date(), { pagamento = fa
     jose: receituario('Dra. Helena Duarte', 'CRM-SP 118.402', ['Metformina 850 mg — 1 comp. 12/12 h', 'Anlodipino 5 mg — 1 comp. pela manhã', 'Omeprazol 20 mg — 1 cáps. em jejum']),
     teresa: receituario('Dr. Marcos Tavares', 'CRM-SP 132.778', ['Losartana potássica 50 mg — 1 comp. 12/12 h', 'Hidroclorotiazida 25 mg — 1 comp. pela manhã', 'AAS 100 mg — 1 comp. após almoço']),
     antonio: receituario('Dr. Paulo Arantes', 'CRM-SP 96.115', ['Anlodipino 5 mg — 1 comp. pela manhã', 'Sinvastatina 20 mg — 1 comp. à noite', 'Omeprazol 20 mg — 1 cáps. em jejum']),
+    mariana: receituario('Dra. Helena Duarte', 'CRM-SP 118.402', ['Losartana potássica 50 mg — 1 comp. 12/12 h', 'AAS 100 mg — 1 comp. após almoço', 'Uso contínuo']),
+    paulo: receituario('Dr. Marcos Tavares', 'CRM-SP 132.778', ['Metformina 850 mg — 1 comp. 12/12 h', 'Sinvastatina 20 mg — 1 comp. à noite', 'Uso contínuo']),
     lucia: receituario('Dra. Renata Sales', 'CRM-SP 141.090', ['Levotiroxina sódica 50 mcg — 1 comp. em jejum', 'Omeprazol 20 mg — 1 cáps. em jejum']),
   }
 
@@ -175,6 +185,10 @@ export async function criarDemonstracao(agoraReal = new Date(), { pagamento = fa
   ciclo(jose, 'jose', rJose, h(-31), { ate: 'EmSeparacao' })                                       // parado há mais de 24 h
   const rMaria2 = enviar(maria, 'maria', h(-5)); ciclo(maria, 'maria', rMaria2, h(-4.5), { ate: 'Pendente' })   // receita nova aguardando análise
   const rAntonio2 = enviar(antonio, 'antonio', h(-2)); ciclo(antonio, 'antonio', rAntonio2, h(-1.5), { ate: 'Pendente' })
+
+  // Receitas aprovadas, sem pedido: quem entrar com estas contas monta a primeira Box na hora.
+  const rMariana = enviar(mariana, 'mariana', h(-30)); aprovar(rMariana, h(-29), 6)
+  const rPaulo = enviar(paulo, 'paulo', h(-28)); aprovar(rPaulo, h(-27), 6)
 
   em(null)
   s.estado.pagamento.habilitado = pagamento   // o histórico acima é anterior ao pagamento; a demonstração nova já exige pagar

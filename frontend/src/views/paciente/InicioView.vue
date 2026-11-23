@@ -88,7 +88,7 @@ const irParaHorarios = () => document.getElementById('horarios')?.scrollIntoView
         <div v-else class="stack"><h3>Comece pela sua receita</h3><p class="muted">Envie a receita, escolha medicamentos e horários e receba os sachês prontos em casa.</p>
           <div><RouterLink class="btn btn-primario" :to="{ name: 'box' }">Montar minha primeira Box</RouterLink></div></div>
       </section>
-      <section v-if="base" id="horarios" class="stack">
+      <section v-if="base" id="horarios" class="card stack-lg">
         <div class="secao-titulo"><h2>Seus horários</h2><span class="subtle">Cada compartimento é um sachê do dia</span></div>
         <OrganizadorHorarios :itens="base.itens" />
       </section>

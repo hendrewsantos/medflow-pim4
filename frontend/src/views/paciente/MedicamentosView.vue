@@ -90,7 +90,9 @@ const situacao = (m) => (!m.permitidoNaBox ? { texto: 'Fora da Box', classe: 'su
 </template>
 
 <style>
-.filtros-catalogo { gap: 12px; flex-wrap: wrap; }
+.filtros-catalogo { gap: 12px 20px; flex-wrap: wrap; margin-bottom: 20px; }
+.filtros-catalogo + .programas { margin-bottom: 18px; }
+.programas + .subtle { margin: 0 0 18px; }
 .ficha { margin: 0; display: grid; gap: 10px; }
 .ficha > div { display: grid; grid-template-columns: 11rem 1fr; gap: 12px; }
 .ficha dt { color: var(--ink-2); font-weight: 700; }

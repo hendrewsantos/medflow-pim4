@@ -9,6 +9,10 @@ Projeto Integrado Multidisciplinar IV (PIM IV) do curso de Análise e Desenvolvi
 ![Tela inicial](docs/prints/00-inicio-publico.jpg)
 
 ## Vídeo
+[![Assistir ao vídeo do sistema completo](docs/video/capa-do-video.jpg)](docs/video/medflow-fluxo-completo.mp4)
+
+*Clique na imagem para assistir: o GitHub abre o vídeo e toca direto no navegador.*
+
 O sistema completo em 3 minutos (abertura, página institucional, paciente com pagamento, farmacêutica, operador, entregador e acompanhamento): [`docs/video/medflow-fluxo-completo.mp4`](docs/video/medflow-fluxo-completo.mp4). O arquivo vem junto quando você baixa ou clona o repositório.
 
 ## Sumário
@@ -84,6 +88,7 @@ Dados fictícios, criados automaticamente quando a API roda em modo de desenvolv
 | Perfil | E-mail | Senha |
 |---|---|---|
 | Paciente | `carlos@email.com` | `MedFlow2026` |
+| Paciente | `mariana@email.com`, `paulo@email.com`, `beatriz@email.com` | `MedFlow2026` |
 | Administrador (farmacêutica RT) | `juliana@medflow.com.br` | `MedFlow2026` |
 | Funcionário (operador) | `bruno@medflow.com.br` | `MedFlow2026` |
 | Entregador | `rafael@medflow.com.br` | `MedFlow2026` |

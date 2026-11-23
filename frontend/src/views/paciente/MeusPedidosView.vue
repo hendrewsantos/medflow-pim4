@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Icone from '../../components/Icone.vue'
 import StatusPill from '../../components/StatusPill.vue'
@@ -17,17 +17,29 @@ const lista = ref([])
 const detalhe = ref(null)
 const cancelando = ref(null)
 
-async function carregar() {
+async function carregar(silencioso = false) {
   try {
     lista.value = await api.pedidos.meus()
     const id = Number(route.params.id) || lista.value[0]?.id
     detalhe.value = id ? await api.pedidos.obter(id) : null
   } catch (e) {
-    ui.erro(e)
+    if (silencioso !== true) ui.erro(e)
   }
 }
-onMounted(carregar)
-watch(() => route.params.id, carregar)
+
+// Acompanhamento sem recarregar a página: enquanto a aba está aberta, o status se atualiza sozinho.
+let temporizador = null
+const atualizarSeVisivel = () => { if (document.visibilityState === 'visible') carregar(true) }
+onMounted(() => {
+  carregar()
+  temporizador = setInterval(atualizarSeVisivel, 6000)
+  document.addEventListener('visibilitychange', atualizarSeVisivel)
+})
+onBeforeUnmount(() => {
+  clearInterval(temporizador)
+  document.removeEventListener('visibilitychange', atualizarSeVisivel)
+})
+watch(() => route.params.id, () => carregar())
 
 const selecionar = (id) => router.push({ name: 'pedidos', params: { id } })
 
