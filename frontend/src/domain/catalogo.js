@@ -181,3 +181,16 @@ const PRECOS = {
 }
 
 export const precoDe = (principioAtivo) => PRECOS[String(principioAtivo || '').toLowerCase()] ?? 0.6
+
+/** Itens de demonstração que o paciente consegue pôr na Box, por programa (exclui controle especial, antimicrobianos e termolábeis). */
+const BASE_VISIVEIS = [
+  ['Losartana potássica 50 mg', 'Hipertensão'], ['Atenolol 25 mg', 'Hipertensão'], ['Hidroclorotiazida 25 mg', 'Hipertensão'], ['Anlodipino 5 mg', 'Hipertensão'],
+  ['Metformina 850 mg', 'Diabetes'], ['Sinvastatina 20 mg', 'Colesterol'], ['Levotiroxina sódica 50 mcg', 'Tireoide'], ['Omeprazol 20 mg', 'Estômago'], ['AAS 100 mg', 'Coração e circulação'],
+]
+export function programasDoCatalogo() {
+  const todos = [...BASE_VISIVEIS.map(([nome, programa]) => ({ nome, programa })), ...CATALOGO_EXTRA.filter((m) => !m.flag).map((m) => ({ nome: `${m.nome} ${m.concentracao}`, programa: m.programa }))]
+  return PROGRAMAS.map((programa) => {
+    const itens = todos.filter((m) => m.programa === programa)
+    return { programa, total: itens.length, exemplos: itens.slice(0, 4).map((m) => m.nome) }
+  })
+}
