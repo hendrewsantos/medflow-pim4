@@ -310,7 +310,7 @@ onBeforeUnmount(() => { observador?.disconnect(); cancelAnimationFrame(rAF); cle
 
       <section id="equipe" class="st-secao" aria-labelledby="h-eq">
         <h2 id="h-eq" class="revela">Quem fez</h2>
-        <p class="st-lead revela">Projeto Integrado Multidisciplinar IV do curso de Análise e Desenvolvimento de Sistemas da UNIP, desenvolvido por cinco estudantes, com orientação da professora Eliana Ap. Alves.</p>
+        <p class="st-lead revela">Projeto Integrado Multidisciplinar IV do curso de Análise e Desenvolvimento de Sistemas da UNIP, desenvolvido por cinco estudantes, com orientação do professor André Gomes de Lira Muniz.</p>
         <ul class="st-equipe revela">
           <li v-for="e in EQUIPE" :key="e.nome">
             <a v-if="e.linkedin" :href="e.linkedin" target="_blank" rel="noopener noreferrer" :aria-label="`${e.nome}, perfil no LinkedIn (abre em nova aba)`"><span>{{ e.nome }}</span><small>LinkedIn ↗</small></a>

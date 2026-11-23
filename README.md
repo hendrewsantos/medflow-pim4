@@ -207,13 +207,13 @@ Tecnologias: ASP.NET Core 8, EF Core 8 (Pomelo), MySQL 8.4, JWT, Vue 3, Kotlin, 
 ## Equipe
 Grupo do PIM IV, UNIP, curso de Análise e Desenvolvimento de Sistemas (São Paulo, 2026). Orientador: Prof. André Gomes de Lira Muniz.
 
-| Integrante | GitHub |
-|---|---|
-| Gabriel Pimenta de Jesus | |
-| Hendrew dos Santos Braz | [@hendrewsantos](https://github.com/hendrewsantos) |
-| Manuel Douglas Silva Alves | |
-| Matheus Renato Bento Estevo | [@MatheusRenat0](https://github.com/MatheusRenat0) |
-| Matheus Santos Ribeiro | |
+| Integrante | GitHub | LinkedIn |
+|---|---|---|
+| Gabriel Pimenta de Jesus | | [perfil](https://www.linkedin.com/in/gabriel-pimenta-790276360/) |
+| Hendrew dos Santos Braz | [@hendrewsantos](https://github.com/hendrewsantos) | [perfil](https://www.linkedin.com/in/hendrew-santos2530) |
+| Manuel Douglas Silva Alves | | [perfil](https://www.linkedin.com/in/mdouglas12/) |
+| Matheus Renato Bento Estevo | [@MatheusRenat0](https://github.com/MatheusRenat0) | [perfil](https://www.linkedin.com/in/matheus-estevo-281582357/) |
+| Matheus Santos Ribeiro | | [perfil](https://www.linkedin.com/in/matheus-santos-3733923a8/) |
 
 O PIM III, que deu origem a este projeto, está no repositório original do grupo.
 

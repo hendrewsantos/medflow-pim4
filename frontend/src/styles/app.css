@@ -648,3 +648,8 @@ body { background: transparent; }
 .pub-conteudo { position: relative; }
 .pub-fundo { position: absolute; left: 0; right: 0; top: 0; height: 520px; overflow: hidden; pointer-events: none; z-index: 0; }
 .pub-conteudo > *:not(.pub-fundo) { position: relative; z-index: 1; }
+
+/* Tela de entrar e criar conta: um fundo só, sem linha divisória; os remédios passam por toda a largura */
+.acesso { position: relative; overflow: hidden; min-height: 100dvh; }
+.acesso .lado-marca { background: transparent; position: static; overflow: visible; }
+.acesso .lado-form { position: relative; z-index: 1; }
