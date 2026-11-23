@@ -1,6 +1,9 @@
 <script setup>
 // Moldura das páginas públicas (início, termos, privacidade, contato): cabeçalho, conteúdo e rodapé com links legais.
 import MenuAcessibilidade from '../../components/MenuAcessibilidade.vue'
+import FundoRemedios from '../../components/FundoRemedios.vue'
+
+defineProps({ remedios: { type: Boolean, default: false } })
 import RodapePublico from './RodapePublico.vue'
 import { MODO_DEMO } from '../../services/api.js'
 import { useAuthStore } from '../../stores/auth.js'
@@ -24,7 +27,7 @@ const auth = useAuthStore()
         <MenuAcessibilidade />
       </nav>
     </header>
-    <main id="conteudo-publico" class="pub-conteudo" tabindex="-1"><slot /></main>
+    <main id="conteudo-publico" class="pub-conteudo" tabindex="-1"><div v-if="remedios" class="pub-fundo"><FundoRemedios /></div><slot /></main>
     <footer class="pub-rodape">
       <RodapePublico />
       <p v-if="MODO_DEMO" class="subtle">Modo demonstração: tudo roda no seu navegador, com dados fictícios.</p>

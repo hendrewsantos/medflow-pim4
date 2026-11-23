@@ -633,12 +633,18 @@ pre.json { background: var(--surface-2); border: 1px solid var(--line); border-r
 :root[data-movimento="reduzido"] .esqueleto span { animation: none; }
 
 /* ── Fundo em degradê suave (branco, verde-água e azul) em todas as telas; os blocos de conteúdo seguem nos tokens ── */
-:root { --bg-grad: linear-gradient(165deg, #fbfefe 0%, #e3f4f2 42%, #d6e7f5 100%); --lado-grad: linear-gradient(160deg, #f1faf9 0%, #d9eeec 50%, #c6dff2 100%); }
-:root[data-theme="dark"] { --bg-grad: linear-gradient(165deg, #0c161f 0%, #0e2330 50%, #0f2f39 100%); --lado-grad: linear-gradient(160deg, #0c1c29 0%, #0e2a38 55%, #10353f 100%); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { --bg-grad: linear-gradient(165deg, #0c161f 0%, #0e2330 50%, #0f2f39 100%); --lado-grad: linear-gradient(160deg, #0c1c29 0%, #0e2a38 55%, #10353f 100%); } }
+:root { --bg-grad: linear-gradient(180deg, #d6f0ed 0%, #d5e6f5 50%, #ffffff 100%); --lado-grad: linear-gradient(160deg, #f1faf9 0%, #d9eeec 50%, #c6dff2 100%); }
+:root[data-theme="dark"] { --bg-grad: linear-gradient(180deg, #0f3039 0%, #0e2330 50%, #0b141c 100%); --lado-grad: linear-gradient(160deg, #0c1c29 0%, #0e2a38 55%, #10353f 100%); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { --bg-grad: linear-gradient(180deg, #0f3039 0%, #0e2330 50%, #0b141c 100%); --lado-grad: linear-gradient(160deg, #0c1c29 0%, #0e2a38 55%, #10353f 100%); } }
 :root[data-contraste="alto"] { --bg-grad: #ffffff; --lado-grad: #ffffff; }
+/* O degradê fica no contêiner do app: acompanha a altura inteira do conteúdo (topo verde-água, meio azul, fim branco). */
 html { background-color: var(--bg); }
-body { background-color: var(--bg); background-image: var(--bg-grad); background-attachment: fixed; }
+body { background: transparent; }
+#app { min-height: 100%; background-color: var(--bg); background-image: var(--bg-grad); background-size: 100% 100%; }
 .acesso .lado-marca { background: var(--lado-grad); position: relative; overflow: hidden; }
 .acesso .lado-marca > *:not(.fundo-remedios) { position: relative; z-index: 1; }
 .abas { flex-wrap: wrap; overflow-x: visible; }
+
+.pub-conteudo { position: relative; }
+.pub-fundo { position: absolute; left: 0; right: 0; top: 0; height: 520px; overflow: hidden; pointer-events: none; z-index: 0; }
+.pub-conteudo > *:not(.pub-fundo) { position: relative; z-index: 1; }

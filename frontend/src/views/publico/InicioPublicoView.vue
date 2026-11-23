@@ -23,7 +23,7 @@ const ACESSIBILIDADE = [
 </script>
 
 <template>
-  <PublicoLayout>
+  <PublicoLayout remedios>
     <section class="pub-hero">
       <h1>A dose certa, no horário certo, na sua porta.</h1>
       <p>O MedFlow organiza os seus medicamentos de uso contínuo em sachês separados por horário, confere a receita com uma farmacêutica e entrega em casa. Você não precisa lembrar de renovar: avisamos antes.</p>

@@ -31,6 +31,7 @@ const TOUR = [
   { rotulo: 'Painel', quem: 'Farmacêutica', img: '/site/20-admin-painel.jpg', alt: 'Painel da operação com indicadores', texto: 'O painel mostra tempo de ciclo, entregas na primeira tentativa, estoque abaixo do mínimo e lotes a vencer.' },
 ]
 const INTERVALO = 6000
+const VERSAO_IMAGENS = 3 // muda quando os prints são refeitos, para o navegador não usar a cópia antiga
 
 const NUMEROS = [
   { valor: 72, rotulo: 'medicamentos de uso contínuo para montar a Box' },
@@ -96,7 +97,13 @@ const PERGUNTAS = [
 ]
 
 const TECNOLOGIAS = [['API', 'ASP.NET Core 8 e Entity Framework'], ['Banco', 'MySQL 8, com gatilhos e procedimentos'], ['Site', 'Vue 3 e Vite'], ['App do entregador', 'Kotlin e Jetpack Compose'], ['Entrega contínua', 'Docker e GitHub Actions']]
-const EQUIPE = ['Gabriel Pimenta', 'Hendrew Braz', 'Manuel Douglas', 'Matheus Renato', 'Matheus Ribeiro']
+const EQUIPE = [
+  { nome: 'Gabriel Pimenta', linkedin: 'https://www.linkedin.com/in/gabriel-pimenta-790276360/' },
+  { nome: 'Hendrew Braz', linkedin: 'https://www.linkedin.com/in/hendrew-santos2530' },
+  { nome: 'Manuel Douglas', linkedin: 'https://www.linkedin.com/in/mdouglas12/' },
+  { nome: 'Matheus Renato', linkedin: null },
+  { nome: 'Matheus Ribeiro', linkedin: null },
+]
 
 const sem = computed(() => ui.prefs.reduzirMovimento || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches))
 const exibidos = ref(NUMEROS.map(() => 0))
@@ -196,7 +203,7 @@ onBeforeUnmount(() => { observador?.disconnect(); cancelAnimationFrame(rAF); cle
 
     <main id="st-conteudo" tabindex="-1">
       <section class="st-hero">
-        <FundoRemedios variante="faixas" />
+        <FundoRemedios />
         <div class="st-hero-texto st-entra">
           <h1>A dose certa, no horário certo, na sua porta.</h1>
           <p>O MedFlow Solutions organiza os seus medicamentos de uso contínuo em sachês separados por horário, confere a receita com uma farmacêutica e entrega em casa. Você não precisa lembrar de renovar: avisamos antes.</p>
@@ -214,9 +221,11 @@ onBeforeUnmount(() => { observador?.disconnect(); cancelAnimationFrame(rAF); cle
             </button>
           </div>
           <div class="st-mock-corpo">
-            <div v-for="(a, i) in TOUR" v-show="aba === i" :id="`painel-${i}`" :key="a.rotulo" class="st-painel" role="tabpanel" :aria-labelledby="`aba-${i}`">
-              <div class="st-tela" :class="{ retrato: a.retrato }"><img :src="a.img" :alt="a.alt" loading="lazy" /></div>
-              <p><strong>{{ a.quem }}.</strong> {{ a.texto }}</p>
+            <div class="st-paineis">
+              <div v-for="(a, i) in TOUR" :id="`painel-${i}`" :key="a.rotulo" class="st-painel" :class="{ ativo: aba === i }" role="tabpanel" :aria-labelledby="`aba-${i}`" :aria-hidden="aba !== i">
+                <div class="st-tela" :class="{ retrato: a.retrato }"><img :src="`${a.img}?v=${VERSAO_IMAGENS}`" :alt="a.alt" /></div>
+                <p><strong>{{ a.quem }}.</strong> {{ a.texto }}</p>
+              </div>
             </div>
             <button v-if="!sem" class="st-pausa btn btn-sm" type="button" :aria-pressed="!tocando" @click="alternarTour">{{ tocando ? 'Pausar tour' : 'Retomar tour' }}</button>
           </div>
@@ -302,7 +311,12 @@ onBeforeUnmount(() => { observador?.disconnect(); cancelAnimationFrame(rAF); cle
       <section id="equipe" class="st-secao" aria-labelledby="h-eq">
         <h2 id="h-eq" class="revela">Quem fez</h2>
         <p class="st-lead revela">Projeto Integrado Multidisciplinar IV do curso de Análise e Desenvolvimento de Sistemas da UNIP, desenvolvido por cinco estudantes, com orientação da professora Eliana Ap. Alves.</p>
-        <ul class="st-equipe revela"><li v-for="e in EQUIPE" :key="e">{{ e }}</li></ul>
+        <ul class="st-equipe revela">
+          <li v-for="e in EQUIPE" :key="e.nome">
+            <a v-if="e.linkedin" :href="e.linkedin" target="_blank" rel="noopener noreferrer" :aria-label="`${e.nome}, perfil no LinkedIn (abre em nova aba)`"><span>{{ e.nome }}</span><small>LinkedIn ↗</small></a>
+            <span v-else class="st-sem-link">{{ e.nome }}</span>
+          </li>
+        </ul>
         <h3 class="revela st-sub">Tecnologias</h3>
         <dl class="st-tec revela"><div v-for="[k, v] in TECNOLOGIAS" :key="k"><dt>{{ k }}</dt><dd>{{ v }}</dd></div></dl>
       </section>
