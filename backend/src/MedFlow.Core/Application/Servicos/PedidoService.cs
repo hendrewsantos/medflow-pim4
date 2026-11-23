@@ -37,7 +37,9 @@ public sealed class PedidoService
             var disponivel = m.DisponivelAte(validoAte);
             return new DisponibilidadeItemDto(m.Id, m.Nome, n.Quantidade, disponivel, disponivel >= n.Quantidade);
         }).ToList();
-        return new SimulacaoDto(resultado.All(i => i.Atende), resultado);
+        if (!_pagamento.Habilitado) return new SimulacaoDto(resultado.All(i => i.Atende), resultado);
+        var valor = necessidades.Sum(n => n.Quantidade * medicamentos.First(x => x.Id == n.MedicamentoId).PrecoUnitario);
+        return new SimulacaoDto(resultado.All(i => i.Atende), resultado, decimal.Round(valor, 2), _pagamento.TaxaEntrega, _pagamento.PrazoMinutos);
     }
 
     /// <summary>

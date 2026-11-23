@@ -76,6 +76,8 @@ export const api = {
     obter: (id) => get(`/pedidos/${id}`),
     proximaRenovacao: () => get('/pedidos/proxima-renovacao'),
     cancelar: (id) => post(`/pedidos/${id}/cancelar`),
+    aprovarPagamento: (id) => post(`/pedidos/${id}/pagamento/aprovar`),
+    simularExpiracao: (id) => post(`/pedidos/${id}/pagamento/expirar`),
     finalizarBox: (id) => post(`/pedidos/${id}/finalizar-box`),
   },
   entregas: {

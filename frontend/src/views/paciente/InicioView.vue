@@ -7,7 +7,8 @@ import OrganizadorHorarios from '../../components/OrganizadorHorarios.vue'
 import { api } from '../../services/api.js'
 import { useAuthStore } from '../../stores/auth.js'
 import { useUiStore } from '../../stores/ui.js'
-import { data, dataSo, relativo, primeiroNome, mensagemStatus } from '../../utils/formato.js'
+import ContagemRegressiva from '../../components/ContagemRegressiva.vue'
+import { data, dataSo, relativo, primeiroNome, mensagemStatus, reais } from '../../utils/formato.js'
 import { DIAS_CICLO, inicioDoDia, somarDias } from '../../domain/regras.js'
 
 const auth = useAuthStore()
@@ -19,10 +20,10 @@ const ultimo = ref(null)
 const recusado = ref(null)
 const renovacao = ref(null)
 
-const EM_ANDAMENTO = ['Pendente', 'EmSeparacao', 'AguardandoEntregador', 'EmRota']
+const EM_ANDAMENTO = ['AguardandoPagamento', 'Pendente', 'EmSeparacao', 'AguardandoEntregador', 'EmRota']
 const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
 
-onMounted(async () => {
+async function carregar() {
   try {
     const [pedidos, rec] = await Promise.all([api.pedidos.meus(), api.receitas.minhas()])
     receitas.value = rec
@@ -36,7 +37,8 @@ onMounted(async () => {
   } finally {
     carregando.value = false
   }
-})
+}
+onMounted(carregar)
 
 const receitaValida = computed(() => receitas.value.find((r) => r.status === 'Pendente' || (r.status === 'Aprovada' && inicioDoDia(r.validaAte) >= inicioDoDia(new Date()))))
 const entregueEm = computed(() => ultimo.value?.entregas.at(-1)?.concluidaEm)
@@ -64,8 +66,10 @@ const irParaHorarios = () => document.getElementById('horarios')?.scrollIntoView
         <div v-if="ativo" class="stack-lg">
           <div class="row-between"><div><h3>Box em andamento · pedido #{{ ativo.id }}</h3><p class="subtle">Ciclo de {{ data(ativo.criadoEm) }}</p></div><StatusPill :status="ativo.status" /></div>
           <LinhaDoTempo :pedido="ativo" />
-          <div class="aviso aviso-info"><Icone nome="info" /><p>{{ mensagemStatus(ativo) }}</p></div>
-          <div><RouterLink class="btn" :to="{ name: 'pedidos', params: { id: ativo.id } }">Ver detalhes do pedido</RouterLink></div>
+          <div v-if="ativo.status === 'AguardandoPagamento'" class="aviso aviso-espera"><Icone nome="relogio" />
+            <p>Falta pagar <strong>{{ reais(ativo.valorMedicamentos + ativo.valorEntrega) }}</strong>. Tempo restante: <ContagemRegressiva :prazo="ativo.pagamentoPrazoEm" @fim="carregar" /></p></div>
+          <div v-else class="aviso aviso-info"><Icone nome="info" /><p>{{ mensagemStatus(ativo) }}</p></div>
+          <div><RouterLink class="btn" :class="{ 'btn-primario': ativo.status === 'AguardandoPagamento' }" :to="{ name: 'pedidos', params: { id: ativo.id } }">{{ ativo.status === 'AguardandoPagamento' ? 'Pagar agora' : 'Ver detalhes do pedido' }}</RouterLink></div>
         </div>
         <div v-else-if="recusado" class="stack">
           <div class="aviso aviso-ruim"><Icone nome="erro" /><p>{{ mensagemStatus(recusado) }}</p></div>

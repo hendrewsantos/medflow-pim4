@@ -42,7 +42,7 @@ public sealed record AlertaDto(string Tipo, string Medicamento, string Mensagem,
 public sealed record ItemBoxRequest(int MedicamentoId, IReadOnlyList<string> Horarios, int DosePorHorario);
 public sealed record ConfirmarPedidoRequest(int ReceitaId, IReadOnlyList<ItemBoxRequest> Itens, string EnderecoEntrega);
 public sealed record DisponibilidadeItemDto(int MedicamentoId, string Medicamento, int Necessario, int Disponivel, bool Atende);
-public sealed record SimulacaoDto(bool PodeConfirmar, IReadOnlyList<DisponibilidadeItemDto> Itens);
+public sealed record SimulacaoDto(bool PodeConfirmar, IReadOnlyList<DisponibilidadeItemDto> Itens, decimal ValorMedicamentos = 0, decimal TaxaEntrega = 0, int PrazoPagamentoMinutos = 0);
 public sealed record AlocacaoDto(string Lote, DateTime Validade, int Quantidade);
 public sealed record PedidoItemDto(int MedicamentoId, string Medicamento, int Quantidade, IReadOnlyList<string> Horarios, int DosePorHorario, IReadOnlyList<AlocacaoDto> Lotes);
 public sealed record HistoricoDto(StatusPedido? De, StatusPedido Para, DateTime Em, string? Observacao);

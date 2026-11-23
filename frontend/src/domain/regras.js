@@ -17,10 +17,12 @@ export const STATUS = Object.freeze({
   Entregue: 'Entregue',
   Cancelado: 'Cancelado',
   Recusado: 'Recusado',
+  AguardandoPagamento: 'AguardandoPagamento',
 })
 
 /** RN08 — transições permitidas da máquina de estados do pedido. */
 export const TRANSICOES = Object.freeze({
+  AguardandoPagamento: ['Pendente', 'EmSeparacao', 'Recusado', 'Cancelado'],
   Pendente: ['EmSeparacao', 'Recusado', 'Cancelado'],
   EmSeparacao: ['AguardandoEntregador'],
   AguardandoEntregador: ['EmRota'],

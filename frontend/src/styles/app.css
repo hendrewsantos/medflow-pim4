@@ -611,3 +611,13 @@ pre.json { background: var(--surface-2); border: 1px solid var(--line); border-r
   .barra { flex-wrap: wrap; gap: 8px 16px; padding-block: 8px; }
   .barra .nav { order: 3; flex-basis: 100%; }
 }
+
+/* Pagamento simulado */
+.pagamento { border: 1px solid var(--line-strong); border-radius: var(--r); padding: 16px; background: var(--surface); }
+.pg-prazo { display: flex; flex-direction: column; align-items: flex-end; }
+.valores { margin: 0; display: grid; gap: 4px; max-width: 340px; }
+.valores > div { display: flex; justify-content: space-between; gap: 16px; }
+.valores dt { color: var(--ink-2); }
+.valores dd { margin: 0; font-variant-numeric: tabular-nums; }
+.valores .total { border-top: 1px solid var(--line); padding-top: 6px; margin-top: 2px; font-weight: 700; }
+.valores .total dt { color: var(--ink); }

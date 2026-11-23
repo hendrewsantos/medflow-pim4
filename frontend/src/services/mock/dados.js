@@ -3,7 +3,7 @@
 // Assim estoque, histórico e indicadores ficam sempre coerentes entre si.
 
 import { somarDias, somarHoras, somarMeses } from '../../domain/regras.js'
-import { CATALOGO_EXTRA } from '../../domain/catalogo.js'
+import { CATALOGO_EXTRA, precoDe } from '../../domain/catalogo.js'
 import { criarServidor } from './servidor.js'
 
 export const SENHA_DEMO = 'MedFlow2026'
@@ -24,7 +24,7 @@ function cpf(base9) {
 
 const receituario = (medico, crm, itens) => ({ medico, crm, itens })
 
-export async function criarDemonstracao(agoraReal = new Date()) {
+export async function criarDemonstracao(agoraReal = new Date(), { pagamento = false } = {}) {
   const s = criarServidor()
   const { ops } = s
   const em = (d) => s.fixarRelogio(d)
@@ -53,7 +53,7 @@ export async function criarDemonstracao(agoraReal = new Date()) {
 
   // ── Catálogo ──
   const med = (nome, principioAtivo, concentracao, forma, tarja, nivelMinimo, controleEspecial = false, extra = {}) =>
-    ops.criarMedicamento({ nome, principioAtivo, concentracao, formaFarmaceutica: forma, tarja, nivelMinimo, controleEspecial, ...extra })
+    ops.criarMedicamento({ nome, principioAtivo, concentracao, formaFarmaceutica: forma, tarja, nivelMinimo, controleEspecial, precoUnitario: precoDe(principioAtivo), ...extra })
   const losartana = med('Losartana potássica', 'losartana potássica', '50 mg', 'comprimido', 'Vermelha', 120)
   const metformina = med('Metformina', 'cloridrato de metformina', '850 mg', 'comprimido', 'Vermelha', 120)
   const sinvastatina = med('Sinvastatina', 'sinvastatina', '20 mg', 'comprimido', 'Vermelha', 60)
@@ -177,5 +177,6 @@ export async function criarDemonstracao(agoraReal = new Date()) {
   const rAntonio2 = enviar(antonio, 'antonio', h(-2)); ciclo(antonio, 'antonio', rAntonio2, h(-1.5), { ate: 'Pendente' })
 
   em(null)
+  s.estado.pagamento.habilitado = pagamento   // o histórico acima é anterior ao pagamento; a demonstração nova já exige pagar
   return s
 }

@@ -34,7 +34,7 @@ const ymd = (d) => { const x = new Date(d); return `${x.getFullYear()}-${String(
 export function criarServidor({ relogio } = {}) {
   let agoraFixo = null
   const agora = () => (agoraFixo ? new Date(agoraFixo) : relogio ? relogio() : new Date())
-  const estado = { seq: {}, usuarios: [], receitas: [], medicamentos: [], tratamentos: [], pedidos: [], movimentacoes: [] }
+  const estado = { pagamento: { habilitado: false, prazoMinutos: 3, taxaEntrega: 9.9 }, seq: {}, usuarios: [], receitas: [], medicamentos: [], tratamentos: [], pedidos: [], movimentacoes: [] }
   let sessao = null
   const novoId = (tipo) => (estado.seq[tipo] = (estado.seq[tipo] || 0) + 1)
   const copia = (o) => JSON.parse(JSON.stringify(o))
@@ -68,13 +68,13 @@ export function criarServidor({ relogio } = {}) {
       return u
     },
 
-    criarMedicamento({ nome, principioAtivo, concentracao, formaFarmaceutica, tarja, controleEspecial = false, nivelMinimo, categoria, termolabil = false }) {
+    criarMedicamento({ nome, principioAtivo, concentracao, formaFarmaceutica, tarja, controleEspecial = false, nivelMinimo, categoria, termolabil = false, precoUnitario = 0 }) {
       if (!nome?.trim()) throw R.erros.regra('Informe o nome do medicamento.')
       if (!(nivelMinimo >= 0)) throw R.erros.regra('O nível mínimo não pode ser negativo.')
       categoria ||= controleEspecial ? 'ControleEspecial' : 'Comum'
       if (!CATEGORIAS.includes(categoria)) throw R.erros.regra('Categoria regulatória inválida.')
       const m = { id: novoId('medicamento'), nome: nome.trim(), principioAtivo, concentracao, formaFarmaceutica, tarja, controleEspecial: controleEspecial || categoria === 'ControleEspecial',
-        categoria, termolabil: !!termolabil, nivelMinimo: Number(nivelMinimo), ativo: true, lotes: [] }
+        categoria, termolabil: !!termolabil, precoUnitario: Number(precoUnitario) || 0, nivelMinimo: Number(nivelMinimo), ativo: true, lotes: [] }
       estado.medicamentos.push(m)
       return m
     },
@@ -120,7 +120,7 @@ export function criarServidor({ relogio } = {}) {
         if (!conferencia.prescritorCrm?.trim()) throw R.erros.regra('Informe o CRM do prescritor (número/UF).')
         if (!conferencia.dataEmissao || R.inicioDoDia(conferencia.dataEmissao) > R.inicioDoDia(agora())) throw R.erros.regra('Informe a data de emissão (não pode ser futura).')
         const conferidos = new Set((conferencia.itensConferidos || []).map(Number))
-        const faltam = estado.pedidos.filter((x) => x.receitaId === r.id && x.status === 'Pendente').flatMap((x) => x.itens).filter((i) => !conferidos.has(i.medicamentoId))
+        const faltam = estado.pedidos.filter((x) => x.receitaId === r.id && (x.status === 'Pendente' || x.status === 'AguardandoPagamento')).flatMap((x) => x.itens).filter((i) => !conferidos.has(i.medicamentoId))
         if (faltam.length) throw R.erros.regra(`Confira todos os itens do pedido ligados à receita (faltam: ${faltam.map((i) => medicamento(i.medicamentoId).nome).join(', ')}).`)
         Object.assign(r, { prescritorNome: conferencia.prescritorNome.trim(), prescritorCrm: conferencia.prescritorCrm.trim(), dataEmissao: iso(R.inicioDoDia(conferencia.dataEmissao)) })
       } else if (r.exemplo) Object.assign(r, { prescritorNome: r.exemplo.medico, prescritorCrm: r.exemplo.crm, dataEmissao: r.enviadaEm })
@@ -135,7 +135,7 @@ export function criarServidor({ relogio } = {}) {
       if (r.status !== 'Pendente') throw new R.ErroApi(409, 'Transição de status não permitida', `Esta receita já foi analisada (status atual: ${r.status}).`)
       if (!motivo || motivo.trim().length < 5) throw R.erros.regra('Informe o motivo da recusa (mínimo de 5 caracteres).')
       Object.assign(r, { status: 'Recusada', motivoRecusa: motivo.trim(), analisadaPorId: farmaceuticoId, analisadaEm: iso(agora()) })
-      for (const p of estado.pedidos.filter((x) => x.receitaId === r.id && x.status === 'Pendente')) {
+      for (const p of estado.pedidos.filter((x) => x.receitaId === r.id && (x.status === 'Pendente' || x.status === 'AguardandoPagamento'))) {
         R.garantirTransicao(p, 'Recusado')
         percorrerAlocacoes(p, (l, q) => { l.quantidadeReservada -= q; movimentar(l.id, 'LiberacaoReserva', q, p.id, farmaceuticoId, 'Reserva liberada: receita recusada.') })
         R.mudarStatus(p, 'Recusado', farmaceuticoId, agora(), `Receita recusada: ${motivo.trim()}`)
@@ -150,7 +150,7 @@ export function criarServidor({ relogio } = {}) {
       if (receita.pacienteId !== pacienteId) throw R.erros.acessoNegado('Esta receita pertence a outro paciente.')
       const usavel = receita.status === 'Pendente' || (receita.status === 'Aprovada' && R.inicioDoDia(receita.validaAte) >= R.inicioDoDia(agora()))
       if (!usavel) throw R.erros.regra('A receita informada foi recusada ou está vencida. Envie uma nova receita (RN02).')
-      if (estado.pedidos.some((p) => p.pacienteId === pacienteId && (p.status === 'Pendente' || p.status === 'EmSeparacao')))
+      if (estado.pedidos.some((p) => p.pacienteId === pacienteId && (p.status === 'AguardandoPagamento' || p.status === 'Pendente' || p.status === 'EmSeparacao')))
         throw R.erros.conflito('Você já tem uma Box em preparação. Aguarde a finalização ou cancele o pedido pendente.')
       if (!enderecoEntrega || enderecoEntrega.trim().length < 10) throw R.erros.regra('Informe o endereço completo de entrega.')
 
@@ -161,16 +161,54 @@ export function criarServidor({ relogio } = {}) {
 
       const t = { id: novoId('tratamento'), pacienteId, receitaId: receita.id, criadoEm: iso(criadoEm), ativo: true, saches }
       estado.tratamentos.push(t)
-      const p = { id: novoId('pedido'), pacienteId, tratamentoId: t.id, receitaId: receita.id, status: 'Pendente', enderecoEntrega: enderecoEntrega.trim(),
+      const pag = estado.pagamento
+      const valorMedicamentos = pag.habilitado
+        ? Math.round(plano.reduce((soma, item) => soma + item.quantidade * (medicamento(item.medicamentoId).precoUnitario || 0), 0) * 100) / 100 : 0
+      const p = { id: novoId('pedido'), pacienteId, tratamentoId: t.id, receitaId: receita.id, status: pag.habilitado ? 'AguardandoPagamento' : 'Pendente', enderecoEntrega: enderecoEntrega.trim(),
         diasCiclo: R.DIAS_CICLO, criadoEm: iso(criadoEm), atualizadoEm: iso(criadoEm), itens: [], entregas: [],
-        historico: [{ de: null, para: 'Pendente', usuarioId: pacienteId, em: iso(criadoEm), observacao: 'Pedido confirmado e estoque reservado.' }] }
+        valorMedicamentos, valorEntrega: pag.habilitado ? pag.taxaEntrega : 0,
+        pagamentoPrazoEm: pag.habilitado ? iso(new Date(criadoEm.getTime() + pag.prazoMinutos * 60_000)) : null, pagoEm: null,
+        historico: [{ de: null, para: pag.habilitado ? 'AguardandoPagamento' : 'Pendente', usuarioId: pacienteId, em: iso(criadoEm),
+          observacao: pag.habilitado ? `Pedido confirmado e estoque reservado. Aguardando o pagamento por ${pag.prazoMinutos} min.` : 'Pedido confirmado e estoque reservado.' }] }
       for (const item of plano) {
         for (const a of item.alocacoes) { lote(a.loteId).quantidadeReservada += a.quantidade; movimentar(a.loteId, 'Reserva', a.quantidade, p.id, pacienteId, 'Reserva na confirmação do pedido.') }
         p.itens.push({ medicamentoId: item.medicamentoId, quantidade: item.quantidade, alocacoes: item.alocacoes })
       }
-      if (receita.status === 'Aprovada') R.mudarStatus(p, 'EmSeparacao', null, criadoEm, 'Receita já aprovada e dentro da validade: pedido segue direto para separação.')
+      if (!pag.habilitado && receita.status === 'Aprovada') R.mudarStatus(p, 'EmSeparacao', null, criadoEm, 'Receita já aprovada e dentro da validade: pedido segue direto para separação.')
       estado.pedidos.push(p)
       return p
+    },
+
+    /** Pagamento simulado aprovado: separação (receita aprovada) ou análise da receita. */
+    aprovarPagamento(pedidoId, pacienteId) {
+      ops.expirarVencidos()
+      const p = pedidoOu404(pedidoId)
+      if (p.pacienteId !== pacienteId) throw R.erros.acessoNegado('Somente o titular paga este pedido.')
+      if (p.status !== 'AguardandoPagamento') throw R.erros.transicao(p.status, 'Pendente')
+      const receita = receitaOu404(p.receitaId)
+      p.pagoEm = iso(agora())
+      R.mudarStatus(p, receita.status === 'Aprovada' ? 'EmSeparacao' : 'Pendente', pacienteId, agora(),
+        receita.status === 'Aprovada' ? 'Pagamento aprovado (simulado). Receita já aprovada: segue para separação.' : 'Pagamento aprovado (simulado). Aguardando a análise da receita.')
+      return p
+    },
+
+    expirarPagamento(p, observacao = 'Pagamento não confirmado dentro do prazo. Pedido cancelado e reserva liberada.') {
+      R.garantirTransicao(p, 'Cancelado')
+      percorrerAlocacoes(p, (l, q) => { l.quantidadeReservada -= q; movimentar(l.id, 'LiberacaoReserva', q, p.id, null, 'Reserva liberada: pagamento não confirmado.') })
+      R.mudarStatus(p, 'Cancelado', null, agora(), observacao)
+      return p
+    },
+
+    simularExpiracao(pedidoId, pacienteId) {
+      const p = pedidoOu404(pedidoId)
+      if (p.pacienteId !== pacienteId) throw R.erros.acessoNegado()
+      if (p.status !== 'AguardandoPagamento') throw R.erros.transicao(p.status, 'Cancelado')
+      return ops.expirarPagamento(p, 'Expiração do pagamento simulada (demonstração). Pedido cancelado e reserva liberada.')
+    },
+
+    /** Cancela, na leitura, os pedidos cujo prazo de pagamento venceu. */
+    expirarVencidos() {
+      for (const p of estado.pedidos.filter((x) => x.status === 'AguardandoPagamento' && x.pagamentoPrazoEm && new Date(x.pagamentoPrazoEm) < agora())) ops.expirarPagamento(p)
     },
 
     cancelarPedido(pedidoId, pacienteId) {
@@ -237,7 +275,7 @@ export function criarServidor({ relogio } = {}) {
     medicamento(m) {
       const hoje = agora()
       return { id: m.id, nome: m.nome, principioAtivo: m.principioAtivo, concentracao: m.concentracao, formaFarmaceutica: m.formaFarmaceutica, tarja: m.tarja,
-        controleEspecial: m.controleEspecial, categoria: m.categoria ?? (m.controleEspecial ? 'ControleEspecial' : 'Comum'), termolabil: !!m.termolabil, nivelMinimo: m.nivelMinimo, quantidadeFisica: R.fisicoTotal(m), quantidadeReservada: R.reservadoTotal(m),
+        controleEspecial: m.controleEspecial, categoria: m.categoria ?? (m.controleEspecial ? 'ControleEspecial' : 'Comum'), termolabil: !!m.termolabil, precoUnitario: m.precoUnitario || 0, nivelMinimo: m.nivelMinimo, quantidadeFisica: R.fisicoTotal(m), quantidadeReservada: R.reservadoTotal(m),
         disponivelParaCiclo: R.disponivelAte(m, R.somarDias(R.inicioDoDia(hoje), R.DIAS_CICLO)), abaixoDoMinimo: R.abaixoDoMinimo(m, hoje),
         lotes: [...m.lotes].sort((a, b) => new Date(a.validade) - new Date(b.validade)).map((l) => ({ id: l.id, numero: l.numero, fabricacao: l.fabricacao, validade: l.validade,
           quantidadeFisica: l.quantidadeFisica, quantidadeReservada: l.quantidadeReservada, disponivel: R.disponivelDoLote(l), vencido: R.loteVencido(l, hoje) })) }
@@ -245,7 +283,8 @@ export function criarServidor({ relogio } = {}) {
     /** EntregaResumoDto (RN13): o entregador não recebe medicamentos, lotes nem receita. */
     entregaResumo: (p) => ({ pedidoId: p.id, codigo: `BOX-${String(p.id).padStart(6, '0')}`, paciente: usuario(p.pacienteId)?.nome ?? '—', endereco: p.enderecoEntrega,
       telefone: usuario(p.pacienteId)?.telefone ?? '', totalSaches: tratamento(p.tratamentoId)?.saches.length ?? 0, status: p.status, tentativa: p.entregas.length }),
-    pedidoResumo: (p) => ({ id: p.id, paciente: usuario(p.pacienteId)?.nome ?? '—', status: p.status, criadoEm: p.criadoEm, atualizadoEm: p.atualizadoEm, totalItens: p.itens.length }),
+    pedidoResumo: (p) => ({ id: p.id, paciente: usuario(p.pacienteId)?.nome ?? '—', status: p.status, criadoEm: p.criadoEm, atualizadoEm: p.atualizadoEm, totalItens: p.itens.length,
+      valorTotal: (p.valorMedicamentos || 0) + (p.valorEntrega || 0), pagamentoPrazoEm: p.pagamentoPrazoEm ?? null }),
     pedido(p) {
       const saches = tratamento(p.tratamentoId)?.saches ?? []
       return { id: p.id, pacienteId: p.pacienteId, paciente: usuario(p.pacienteId)?.nome ?? '—', receitaId: p.receitaId, status: p.status, enderecoEntrega: p.enderecoEntrega,
@@ -257,7 +296,8 @@ export function criarServidor({ relogio } = {}) {
             dosePorHorario: doMed[0]?.quantidade ?? 0, lotes: i.alocacoes.map((a) => { const l = lote(a.loteId); return { lote: l.numero, validade: l.validade, quantidade: a.quantidade } }) }
         }),
         historico: p.historico.map(({ de, para, em, observacao }) => ({ de, para, em, observacao })),
-        entregas: copia(p.entregas) }
+        entregas: copia(p.entregas),
+        valorMedicamentos: p.valorMedicamentos || 0, valorEntrega: p.valorEntrega || 0, pagamentoPrazoEm: p.pagamentoPrazoEm ?? null, pagoEm: p.pagoEm ?? null }
     },
   }
 
@@ -430,7 +470,9 @@ export function criarServidor({ relogio } = {}) {
           const disponivel = R.disponivelAte(m, validoAte)
           return { medicamentoId: m.id, medicamento: m.nome, necessario: n.quantidade, disponivel, atende: disponivel >= n.quantidade }
         })
-        return { podeConfirmar: lista.every((i) => i.atende), itens: lista }
+        const pag = estado.pagamento
+        const valor = pag.habilitado ? Math.round(R.necessidadesDoCiclo(saches).reduce((soma, n) => soma + n.quantidade * (medicamento(n.medicamentoId).precoUnitario || 0), 0) * 100) / 100 : 0
+        return { podeConfirmar: lista.every((i) => i.atende), itens: lista, valorMedicamentos: valor, taxaEntrega: pag.habilitado ? pag.taxaEntrega : 0, prazoPagamentoMinutos: pag.habilitado ? pag.prazoMinutos : 0 }
       }),
       confirmar: resposta(async (d) => {
         const u = exigir('Paciente')
@@ -438,6 +480,7 @@ export function criarServidor({ relogio } = {}) {
       }),
       meus: resposta(async () => {
         const u = exigir('Paciente')
+        ops.expirarVencidos()
         return estado.pedidos.filter((p) => p.pacienteId === u.id).sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)).map(dto.pedidoResumo)
       }),
       operacional: resposta(async (status) => {
@@ -446,6 +489,7 @@ export function criarServidor({ relogio } = {}) {
       }),
       obter: resposta(async (id) => {
         const u = exigir()
+        ops.expirarVencidos()
         const p = pedidoOu404(id)
         const podeVer = PERFIS_EQUIPE.includes(u.perfil) || p.pacienteId === u.id // Entregador: 403 (usa /entregas)
         if (!podeVer) throw R.erros.acessoNegado()
@@ -464,6 +508,8 @@ export function criarServidor({ relogio } = {}) {
           receitaValidaAte: validaAte ? ymd(validaAte) : null, receitaVenceAntes: !!validaAte && R.inicioDoDia(validaAte) < fim }
       }),
       cancelar: resposta(async (id) => dto.pedido(ops.cancelarPedido(id, exigir('Paciente').id))),
+      aprovarPagamento: resposta(async (id) => dto.pedido(ops.aprovarPagamento(id, exigir('Paciente').id))),
+      simularExpiracao: resposta(async (id) => dto.pedido(ops.simularExpiracao(id, exigir('Paciente').id))),
       finalizarBox: resposta(async (id) => dto.pedido(ops.finalizarBox(id, exigir(...PERFIS_EQUIPE).id))),
     },
 
@@ -558,7 +604,7 @@ export function criarServidor({ relogio } = {}) {
         const u = exigir('Paciente')
         if (estado.pedidos.some((p) => p.pacienteId === u.id && ['EmSeparacao', 'AguardandoEntregador', 'EmRota'].includes(p.status)))
           throw R.erros.conflito('Há uma Box em separação ou em rota. A exclusão fica disponível após a entrega.')
-        for (const p of estado.pedidos.filter((x) => x.pacienteId === u.id && x.status === 'Pendente')) ops.cancelarPedido(p.id, u.id)
+        for (const p of estado.pedidos.filter((x) => x.pacienteId === u.id && (x.status === 'Pendente' || x.status === 'AguardandoPagamento'))) ops.cancelarPedido(p.id, u.id)
         for (const r of estado.receitas.filter((x) => x.pacienteId === u.id)) Object.assign(r, { caminhoArquivo: '', previewUrl: null, exemplo: null })
         Object.assign(u, { nome: 'Titular removido', email: `removido-${u.id}@anonimizado.medflow`, cpf: `ANON${u.id}`, endereco: null, telefone: null,
           senhaHash: '', ativo: false, anonimizadoEm: iso(agora()) })

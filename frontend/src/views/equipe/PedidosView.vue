@@ -12,7 +12,7 @@ import { relativo, STATUS_PEDIDO } from '../../utils/formato.js'
 
 const auth = useAuthStore()
 const ui = useUiStore()
-const ABAS = ['Pendente', 'EmSeparacao', 'AguardandoEntregador', 'EmRota', 'Entregue', 'Recusado', 'Cancelado']
+const ABAS = ['AguardandoPagamento', 'Pendente', 'EmSeparacao', 'AguardandoEntregador', 'EmRota', 'Entregue', 'Recusado', 'Cancelado']
 const todos = ref([])
 const aba = ref('EmSeparacao')
 const detalhe = ref(null)

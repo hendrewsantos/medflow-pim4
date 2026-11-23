@@ -21,6 +21,7 @@ export function relativo(d, agora = new Date()) {
 }
 
 export const STATUS_PEDIDO = {
+  AguardandoPagamento: { curto: 'Aguardando pagamento', classe: 'pill-espera' },
   Pendente: { curto: 'Receita em análise', classe: 'pill-espera' },
   EmSeparacao: { curto: 'Em separação', classe: 'pill-info' },
   AguardandoEntregador: { curto: 'Pronta para entrega', classe: 'pill-marca' },
@@ -31,7 +32,8 @@ export const STATUS_PEDIDO = {
 }
 export const STATUS_RECEITA = { Pendente: ['Em análise', 'pill-espera'], Aprovada: ['Aprovada', 'pill-ok'], Recusada: ['Recusada', 'pill-ruim'] }
 export const ETAPAS = ['Pendente', 'EmSeparacao', 'AguardandoEntregador', 'EmRota', 'Entregue']
-export const ETAPA_ROTULO = { Pendente: 'Pedido confirmado', EmSeparacao: 'Em separação', AguardandoEntregador: 'Pronta para entrega', EmRota: 'Saiu para entrega', Entregue: 'Entregue' }
+export const ETAPAS_COM_PAGAMENTO = ['AguardandoPagamento', ...ETAPAS]
+export const ETAPA_ROTULO = { AguardandoPagamento: 'Pagamento', Pendente: 'Pedido confirmado', EmSeparacao: 'Em separação', AguardandoEntregador: 'Pronta para entrega', EmRota: 'Saiu para entrega', Entregue: 'Entregue' }
 export const PERFIL = { Paciente: 'Paciente', Administrador: 'Farmacêutica RT', Funcionario: 'Operador da farmácia', Entregador: 'Entregador' }
 export const MOV = { Entrada: 'Entrada', Reserva: 'Reserva', LiberacaoReserva: 'Liberação de reserva', Baixa: 'Baixa' }
 export const tarjaTexto = (t) => (t === 'Livre' ? 'Sem tarja' : `Tarja ${String(t).toLowerCase()}`)
@@ -42,6 +44,7 @@ export const periodo = (h) => { const n = Number(h.slice(0, 2)); return n < 12 ?
 export function mensagemStatus(p) {
   const entrega = p.entregas?.at(-1)
   switch (p.status) {
+    case 'AguardandoPagamento': return 'Seus medicamentos já estão reservados. Falta o pagamento: se ele não for confirmado dentro do prazo, o pedido é cancelado e a reserva volta ao estoque.'
     case 'Pendente': return 'Recebemos seu pedido e já reservamos os medicamentos no estoque. A farmacêutica responsável vai analisar sua receita; você verá aqui assim que ela for aprovada.'
     case 'EmSeparacao': return 'Receita aprovada. A equipe da farmácia está separando e fracionando os sachês da sua Box.'
     case 'AguardandoEntregador': return entrega?.ocorrencia ? `A última tentativa não foi concluída (${entrega.ocorrencia}). Sua Box volta para a rota na próxima saída.` : 'Sua Box está pronta, com etiqueta de lote e validade em cada sachê, e aguarda o entregador.'
@@ -56,3 +59,5 @@ export function mensagemStatus(p) {
 /** Mensagem de erro legível a partir do ProblemDetails da API. */
 export const mensagemErro = (e) => (e?.erros ? Object.values(e.erros).flat().join(' ') : e?.detail || e?.message || 'Algo deu errado. Tente novamente.')
 export const formatarCpf = (cpf) => { const d = String(cpf ?? '').replace(/\D/g, ''); return d.length === 11 ? `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}` : cpf }
+
+export const reais = (v) => Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })

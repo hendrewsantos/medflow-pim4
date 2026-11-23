@@ -31,6 +31,32 @@ watch(() => route.params.id, carregar)
 
 const selecionar = (id) => router.push({ name: 'pedidos', params: { id } })
 
+async function aprovarPagamento(p) {
+  try {
+    const r = await api.pedidos.aprovarPagamento(p.id)
+    ui.avisar(r.status === 'EmSeparacao' ? 'Pagamento aprovado. Sua Box já vai para separação.' : 'Pagamento aprovado. Agora é só aguardar a análise da receita.', 'ok')
+    await carregar()
+  } catch (e) {
+    ui.erro(e)
+    await carregar()
+  }
+}
+
+async function simularExpiracao(p) {
+  try {
+    await api.pedidos.simularExpiracao(p.id)
+    ui.avisar('Prazo de pagamento encerrado. O pedido foi cancelado e a reserva voltou ao estoque.', 'ok')
+    await carregar()
+  } catch (e) {
+    ui.erro(e)
+  }
+}
+
+async function prazoEncerrado() {
+  await carregar()
+  if (detalhe.value?.status === 'Cancelado') ui.avisar('O prazo de pagamento acabou. O pedido foi cancelado e a reserva voltou ao estoque.', 'ruim')
+}
+
 async function confirmarCancelamento() {
   try {
     await api.pedidos.cancelar(cancelando.value.id)
@@ -48,7 +74,7 @@ async function confirmarCancelamento() {
   <template v-else>
     <div class="cabecalho-pagina"><div><h1>Meus pedidos</h1><p>Cada pedido é uma Box de {{ DIAS_CICLO }} dias. O status mostra exatamente em que etapa ela está.</p></div></div>
     <div class="grid-detalhe-lista">
-      <section class="card"><PedidoDetalhe v-if="detalhe" :pedido="detalhe" pode-cancelar @cancelar="cancelando = $event" /></section>
+      <section class="card"><PedidoDetalhe v-if="detalhe" :pedido="detalhe" pode-cancelar pode-pagar @cancelar="cancelando = $event" @aprovar-pagamento="aprovarPagamento" @expirar-pagamento="simularExpiracao" @atualizar="prazoEncerrado" /></section>
       <section class="tabela-wrap" aria-label="Lista de pedidos">
         <table class="tabela">
           <thead><tr><th>Pedido</th><th>Status</th></tr></thead>

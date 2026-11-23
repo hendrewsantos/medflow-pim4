@@ -9,7 +9,7 @@ import ModalDialogo from '../../components/ModalDialogo.vue'
 import EnvioReceita from './EnvioReceita.vue'
 import { api } from '../../services/api.js'
 import { useUiStore } from '../../stores/ui.js'
-import { data, dataSo, numero, tarjaTexto } from '../../utils/formato.js'
+import { data, dataSo, numero, reais, tarjaTexto } from '../../utils/formato.js'
 import { DIAS_CICLO, MAX_UNIDADES_POR_DOSE, inicioDoDia } from '../../domain/regras.js'
 import { PROGRAMAS, programaDe } from '../../domain/catalogo.js'
 
@@ -51,6 +51,8 @@ const filtrados = computed(() => {
 const visiveis = computed(() => filtrados.value.slice(0, limite.value))
 const programasComItens = computed(() => PROGRAMAS.filter((p) => medicamentos.value.some((m) => programaDe(m.principioAtivo) === p)))
 watch([busca, programa], () => { limite.value = LIMITE })
+const valorDoItem = (i) => (simPorMed.value.get(i.medicamentoId)?.necessario ?? 0) * (porId.value.get(i.medicamentoId)?.precoUnitario ?? 0)
+const pagamentoAtivo = computed(() => (simulacao.value?.valorMedicamentos ?? 0) > 0)
 const nomeMed = (m) => (m ? `${m.nome} ${m.concentracao}` : '')
 const naBox = (id) => box.itens.some((i) => i.medicamentoId === id)
 const copiarItens = (p) => p.itens.map((i) => ({ medicamentoId: i.medicamentoId, horarios: [...i.horarios], dosePorHorario: i.dosePorHorario }))
@@ -60,7 +62,7 @@ async function carregar() {
     const [rec, meds, pedidos, perfil] = await Promise.all([api.receitas.minhas(), api.medicamentos.listar(), api.pedidos.meus(), api.privacidade.meusDados()])
     receitas.value = rec
     medicamentos.value = meds
-    emPreparacao.value = pedidos.find((p) => p.status === 'Pendente' || p.status === 'EmSeparacao') || null
+    emPreparacao.value = pedidos.find((p) => p.status === 'AguardandoPagamento' || p.status === 'Pendente' || p.status === 'EmSeparacao') || null
     const u = pedidos.find((p) => p.status === 'Entregue')
     ultimo.value = u ? await api.pedidos.obter(u.id) : null
     box.endereco ||= perfil.endereco || ''
@@ -130,7 +132,9 @@ async function confirmar() {
   erroConfirmacao.value = null
   try {
     const p = await api.pedidos.confirmar({ receitaId: box.receitaId, itens: box.itens, enderecoEntrega: box.endereco })
-    ui.avisar(p.status === 'EmSeparacao'
+    ui.avisar(p.status === 'AguardandoPagamento'
+      ? 'Pedido confirmado e estoque reservado. Falta o pagamento: veja o prazo na tela do pedido.'
+      : p.status === 'EmSeparacao'
       ? 'Pedido confirmado e estoque reservado. Sua receita já estava aprovada: a Box foi direto para separação.'
       : 'Pedido confirmado e estoque reservado. Agora é só aguardar a análise da receita.', 'ok')
     router.push({ name: 'pedidos', params: { id: p.id } })
@@ -229,15 +233,21 @@ async function confirmar() {
       <section class="stack-lg">
         <div class="tabela-wrap">
           <table class="tabela">
-            <thead><tr><th>Medicamento</th><th>Horários</th><th class="n">Por dose</th><th class="n">Total ({{ DIAS_CICLO }} dias)</th></tr></thead>
+            <thead><tr><th>Medicamento</th><th>Horários</th><th class="n">Por dose</th><th class="n">Total ({{ DIAS_CICLO }} dias)</th><th v-if="pagamentoAtivo" class="n">Valor</th></tr></thead>
             <tbody>
               <tr v-for="i in box.itens" :key="i.medicamentoId">
                 <td>{{ nomeMed(porId.get(i.medicamentoId)) }}</td><td class="mono">{{ i.horarios.join(' · ') }}</td>
-                <td class="n">{{ i.dosePorHorario }}</td><td class="n">{{ numero(simPorMed.get(i.medicamentoId)?.necessario) }}</td>
+                <td class="n">{{ i.dosePorHorario }}</td><td class="n">{{ numero(simPorMed.get(i.medicamentoId)?.necessario) }}</td><td v-if="pagamentoAtivo" class="n">{{ reais(valorDoItem(i)) }}</td>
               </tr>
             </tbody>
           </table>
         </div>
+        <dl v-if="pagamentoAtivo" class="valores" aria-label="Valores da Box">
+          <div><dt>Medicamentos</dt><dd>{{ reais(simulacao.valorMedicamentos) }}</dd></div>
+          <div><dt>Entrega</dt><dd>{{ reais(simulacao.taxaEntrega) }}</dd></div>
+          <div class="total"><dt>Total</dt><dd>{{ reais(simulacao.valorMedicamentos + simulacao.taxaEntrega) }}</dd></div>
+        </dl>
+        <p v-if="pagamentoAtivo" class="subtle">Ao confirmar, os medicamentos ficam reservados e você terá {{ simulacao.prazoPagamentoMinutos }} min para pagar (pagamento simulado, sem cobrança real).</p>
         <div class="campo"><label for="endereco">Endereço de entrega</label><input id="endereco" v-model="box.endereco" class="input" /></div>
         <div v-if="erroConfirmacao" class="aviso aviso-ruim"><Icone nome="erro" />
           <div class="stack"><p><strong>{{ erroConfirmacao.title || 'Não foi possível confirmar' }}.</strong> {{ erroConfirmacao.detail }}</p>

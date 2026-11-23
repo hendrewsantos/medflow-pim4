@@ -87,7 +87,7 @@ public sealed class ReceitaService
         var agora = _relogio.Agora;
         var receita = await _db.Receitas.Include(x => x.Paciente).FirstOrDefaultAsync(x => x.Id == id, ct) ?? throw new NaoEncontradoException("Receita");
 
-        var pedidos = await _db.Pedidos.Where(p => p.ReceitaId == id && p.Status == StatusPedido.Pendente)
+        var pedidos = await _db.Pedidos.Where(p => p.ReceitaId == id && (p.Status == StatusPedido.Pendente || p.Status == StatusPedido.AguardandoPagamento))
             .Include(p => p.Historico).Include(p => p.Itens).ToListAsync(ct);
 
         // RF07: sem checklist completo, prescritor, CRM e conferência item a item a aprovação é recusada (422).
@@ -105,7 +105,8 @@ public sealed class ReceitaService
             throw new DomainException("Confira cada item do pedido com a receita antes de aprovar; item divergente exige recusa com motivo.");
 
         receita.Aprovar(u.Id, r.ValidaAte, agora, r.PrescritorNome, r.PrescritorCrm, r.DataEmissao);
-        foreach (var pedido in pedidos) pedido.IniciarSeparacao(u.Id, agora);
+        // Quem ainda aguarda pagamento só inicia a separação depois de pagar.
+        foreach (var pedido in pedidos.Where(p => p.Status == StatusPedido.Pendente)) pedido.IniciarSeparacao(u.Id, agora);
 
         await _db.SalvarAsync(ct);
         return receita.ParaDto();

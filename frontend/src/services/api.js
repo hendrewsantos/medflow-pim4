@@ -6,7 +6,7 @@ import { salvarBlob } from '../utils/arquivo.js'
 export const MODO_DEMO = import.meta.env.VITE_DEMO === 'true'
 
 function criarApiDemo() {
-  const pronto = import('./mock/dados.js').then(({ criarDemonstracao }) => criarDemonstracao())
+  const pronto = import('./mock/dados.js').then(({ criarDemonstracao }) => criarDemonstracao(new Date(), { pagamento: true }))
   const grupos = ['auth', 'receitas', 'medicamentos', 'pedidos', 'entregas', 'painel', 'usuarios', 'privacidade', 'previsaoReposicao', 'relatorios', 'demo']
   return Object.fromEntries(grupos.map((g) => [g, new Proxy({}, {
     get: (_, metodo) => async (...args) => (await pronto).api[g][metodo](...args),
