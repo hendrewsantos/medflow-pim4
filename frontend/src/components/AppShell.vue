@@ -12,7 +12,7 @@ const router = useRouter()
 const badges = ref({})
 
 const MENUS = {
-  Paciente: [['inicio', 'Início', 'inicio'], ['box', 'Montar Box', 'box'], ['pedidos', 'Meus pedidos', 'pedidos'], ['receitas', 'Receitas', 'receita'], ['dados', 'Meus dados', 'dados']],
+  Paciente: [['inicio', 'Início', 'inicio'], ['medicamentos', 'Medicamentos', 'estoque'], ['box', 'Montar Box', 'box'], ['pedidos', 'Meus pedidos', 'pedidos'], ['receitas', 'Receitas', 'receita'], ['dados', 'Meus dados', 'dados']],
   Administrador: [['painel', 'Painel', 'painel'], ['fila', 'Análise de receitas', 'fila'], ['operacao', 'Pedidos', 'pedidos'], ['estoque', 'Estoque', 'estoque'], ['usuarios', 'Usuários', 'usuarios']],
   Funcionario: [['painel', 'Painel', 'painel'], ['operacao', 'Pedidos', 'pedidos'], ['estoque', 'Estoque', 'estoque']],
   Entregador: [['entregas', 'Minhas entregas', 'entrega']],

@@ -304,3 +304,16 @@ test('Assinatura simulada — "renovar agora" respeita Box em andamento e só va
   await entrarComo(s, 'bruno@medflow.com.br')
   await assert.rejects(() => s.api.assinatura.obter(), status(403))
 })
+
+test('Catálogo de consulta — o paciente vê todos os itens, com motivo dos que ficam fora da Box e sem quantidades de estoque', async () => {
+  const s = await criarDemonstracao(new Date(), { pagamento: true })
+  await entrarComo(s, 'carlos@email.com')
+  const caixa = await s.api.medicamentos.listar()
+  const todos = await s.api.medicamentos.catalogo()
+  assert.ok(todos.length > caixa.length, 'o catálogo de consulta inclui os itens que ficam fora da Box')
+  const clona = todos.find((m) => m.nome.startsWith('Clonazepam'))
+  assert.equal(clona.permitidoNaBox, false)
+  assert.match(clona.motivoForaDaBox, /344/)
+  assert.ok(todos.filter((m) => m.permitidoNaBox).length === caixa.length)
+  assert.ok(todos.every((m) => !('quantidadeFisica' in m) && !('lotes' in m)))
+})

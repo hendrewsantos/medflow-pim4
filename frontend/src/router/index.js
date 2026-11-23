@@ -16,6 +16,7 @@ const routes = [
   { path: '/cadastro', name: 'cadastro', component: () => import('../views/publico/CadastroView.vue'), meta: { publica: true, titulo: 'Criar conta' } },
 
   { path: '/inicio', name: 'inicio', component: () => import('../views/paciente/InicioView.vue'), meta: { perfis: P, titulo: 'Início' } },
+  { path: '/medicamentos', name: 'medicamentos', component: () => import('../views/paciente/MedicamentosView.vue'), meta: { perfis: P, titulo: 'Medicamentos' } },
   { path: '/montar-box', name: 'box', component: () => import('../views/paciente/MontarBoxView.vue'), meta: { perfis: P, titulo: 'Montar Box' } },
   { path: '/meus-pedidos/:id?', name: 'pedidos', component: () => import('../views/paciente/MeusPedidosView.vue'), meta: { perfis: P, titulo: 'Meus pedidos' } },
   { path: '/receitas', name: 'receitas', component: () => import('../views/paciente/ReceitasView.vue'), meta: { perfis: P, titulo: 'Receitas' } },

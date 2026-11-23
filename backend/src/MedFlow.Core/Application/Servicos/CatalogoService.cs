@@ -31,6 +31,25 @@ public sealed class CatalogoService
         return medicamentos.Select(m => m.ParaDto(hoje, hoje.AddDays(Pedido.DiasCicloPadrao))).ToList();
     }
 
+    /// <summary>Consulta aberta ao paciente: todos os medicamentos ativos, com as especificações e se cabem na Box. Sem quantidades de estoque.</summary>
+    public async Task<IReadOnlyList<MedicamentoCatalogoDto>> CatalogoAsync(UsuarioLogado u, CancellationToken ct = default)
+    {
+        var hoje = _relogio.Agora.Date;
+        var validoAte = hoje.AddDays(Pedido.DiasCicloPadrao);
+        var medicamentos = await _db.Medicamentos.Include(m => m.Lotes).Where(m => m.Ativo).OrderBy(m => m.Nome).ThenBy(m => m.Concentracao).ToListAsync(ct);
+        return medicamentos.Select(m => new MedicamentoCatalogoDto(m.Id, m.Nome, m.PrincipioAtivo, m.Concentracao, m.FormaFarmaceutica, m.Tarja, m.Categoria,
+            m.Termolabil, m.PrecoUnitario, m.PermitidoNaBox, m.DisponivelAte(validoAte) > 0, MotivoForaDaBox(m))).ToList();
+    }
+
+    private static string? MotivoForaDaBox(Medicamento m)
+    {
+        if (m.PermitidoNaBox) return null;
+        if (m.ControleEspecial) return "Controle especial (Portaria SVS/MS 344/1998): não pode ser fracionado na Box.";
+        if (m.Categoria == CategoriaRegulatoria.Antimicrobiano) return "Antimicrobiano: exige retenção de receita e não entra na Box.";
+        if (m.Termolabil) return "Exige cadeia fria: não entra na Box.";
+        return "Retenção de receita: não entra na Box.";
+    }
+
     public async Task<MedicamentoDto> CriarAsync(UsuarioLogado u, MedicamentoRequest r, CancellationToken ct = default)
     {
         GarantirEquipe(u);

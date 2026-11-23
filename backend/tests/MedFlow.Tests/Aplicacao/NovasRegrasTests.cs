@@ -153,4 +153,26 @@ public class NovasRegrasTests
         Assert.Equal(30, r.DiasRestantes);
         Assert.True(r.ReceitaVenceAntes);
     }
+
+    [Fact(DisplayName = "CT61 — Catálogo de consulta: o paciente vê todos os itens com o motivo de os de fora da Box, sem quantidades de estoque")]
+    public async Task CatalogoDeConsultaMostraTudoSemEstoque()
+    {
+        var amb = new Ambiente();
+        var carlos = await amb.CriarUsuarioAsync("Carlos Mendes", "carlos@email.com", "52998224725", PerfilUsuario.Paciente);
+        await amb.CriarMedicamentoAsync("Losartana", 100);
+        var controlado = await amb.CriarMedicamentoAsync("Clonazepam", 50, controlado: true);
+        var antimicrobiano = new Medicamento("Amoxicilina", "amoxicilina", "500 mg", "capsula", Tarja.Vermelha, false, 10, CategoriaRegulatoria.Antimicrobiano);
+        amb.Db.Medicamentos.Add(antimicrobiano);
+        await amb.Db.SaveChangesAsync();
+
+        var itens = await new Servicos.CatalogoService(amb.Db, amb.Relogio).CatalogoAsync(Ambiente.Logado(carlos));
+        Assert.Equal(3, itens.Count);
+        Assert.True(itens.Single(i => i.Nome == "Losartana").PermitidoNaBox);
+        var clona = itens.Single(i => i.Nome == "Clonazepam");
+        Assert.False(clona.PermitidoNaBox);
+        Assert.Contains("344", clona.MotivoForaDaBox);
+        Assert.Contains("Antimicrobiano", itens.Single(i => i.Nome == "Amoxicilina").MotivoForaDaBox);
+        Assert.False(itens.Single(i => i.Nome == "Amoxicilina").Disponivel);   // sem lote
+        Assert.DoesNotContain(typeof(MedicamentoCatalogoDto).GetProperties(), p => p.Name.Contains("Quantidade"));
+    }
 }

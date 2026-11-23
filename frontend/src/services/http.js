@@ -63,6 +63,7 @@ export const api = {
   },
   medicamentos: {
     listar: () => get('/medicamentos'),
+    catalogo: () => get('/medicamentos/catalogo'),
     criar: (d) => post('/medicamentos', d),
     registrarEntrada: (id, d) => post(`/medicamentos/${id}/lotes`, d),
     movimentacoes: () => get('/medicamentos/movimentacoes'),

@@ -16,6 +16,10 @@ public sealed class MedicamentosController : BaseController
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<MedicamentoDto>>> Listar(CancellationToken ct) => Ok(await _catalogo.ListarAsync(Logado, ct));
 
+    /// <summary>Consulta aberta ao paciente (e à equipe): especificações de todos os medicamentos, sem estoque; informa os que ficam fora da Box.</summary>
+    [HttpGet("catalogo")]
+    public async Task<ActionResult<IReadOnlyList<MedicamentoCatalogoDto>>> Catalogo(CancellationToken ct) => Ok(await _catalogo.CatalogoAsync(Logado, ct));
+
     [HttpPost]
     [Authorize(Policy = Politicas.Equipe)]
     public async Task<ActionResult<MedicamentoDto>> Criar(MedicamentoRequest request, CancellationToken ct) =>

@@ -72,3 +72,7 @@ public sealed record IndicadoresDto(
     double? TempoCicloP90Horas,
     double? PercentualPrimeiraTentativa,
     int PedidosParadosEmSeparacao);
+
+/// <summary>Ficha de um medicamento para consulta do paciente (sem quantidades de estoque). Itens fora da Box aparecem só como informação.</summary>
+public sealed record MedicamentoCatalogoDto(int Id, string Nome, string PrincipioAtivo, string Concentracao, string FormaFarmaceutica, Tarja Tarja,
+    CategoriaRegulatoria Categoria, bool Termolabil, decimal PrecoUnitario, bool PermitidoNaBox, bool Disponivel, string? MotivoForaDaBox);

@@ -327,6 +327,14 @@ export function criarServidor({ relogio } = {}) {
       const proxima = a?.ativa ? ops.dataDaRenovacao(pacienteId, dias) : null
       return { ativa: !!a?.ativa, ativadaEm: a?.ativadaEm ?? null, proximaRenovacaoEm: proxima ? iso(proxima) : null, diasAntecedencia: dias, ultimaRenovacaoEm: a?.ultimaRenovacaoEm ?? null }
     },
+    catalogoMedicamento(m) {
+      const permitido = !m.controleEspecial && (m.categoria ?? 'Comum') === 'Comum' && !m.termolabil
+      const motivo = permitido ? null : m.controleEspecial ? 'Controle especial (Portaria SVS/MS 344/1998): não pode ser fracionado na Box.'
+        : m.categoria === 'Antimicrobiano' ? 'Antimicrobiano: exige retenção de receita e não entra na Box.' : m.termolabil ? 'Exige cadeia fria: não entra na Box.' : 'Retenção de receita: não entra na Box.'
+      return { id: m.id, nome: m.nome, principioAtivo: m.principioAtivo, concentracao: m.concentracao, formaFarmaceutica: m.formaFarmaceutica, tarja: m.tarja,
+        categoria: m.categoria ?? (m.controleEspecial ? 'ControleEspecial' : 'Comum'), termolabil: !!m.termolabil, precoUnitario: m.precoUnitario || 0,
+        permitidoNaBox: permitido, disponivel: R.disponivelAte(m, R.somarDias(R.inicioDoDia(agora()), R.DIAS_CICLO)) > 0, motivoForaDaBox: motivo }
+    },
     pedido(p) {
       const saches = tratamento(p.tratamentoId)?.saches ?? []
       return { id: p.id, pacienteId: p.pacienteId, paciente: usuario(p.pacienteId)?.nome ?? '—', receitaId: p.receitaId, status: p.status, enderecoEntrega: p.enderecoEntrega,
@@ -469,6 +477,10 @@ export function criarServidor({ relogio } = {}) {
         const u = exigir()
         const equipe = PERFIS_EQUIPE.includes(u.perfil)
         return estado.medicamentos.filter((m) => m.ativo && (equipe || (!m.controleEspecial && (m.categoria ?? 'Comum') === 'Comum' && !m.termolabil))).sort((a, b) => a.nome.localeCompare(b.nome)).map(dto.medicamento)
+      }),
+      catalogo: resposta(async () => {
+        exigir()
+        return estado.medicamentos.filter((x) => x.ativo).sort((a, b) => a.nome.localeCompare(b.nome) || a.concentracao.localeCompare(b.concentracao)).map(dto.catalogoMedicamento)
       }),
       criar: resposta(async (d) => {
         exigir(...PERFIS_EQUIPE)
