@@ -278,3 +278,29 @@ test('Pagamento simulado — expiração cancela e libera a reserva; prazo venci
   s.estado.pedidos.find((p) => p.id === outro.id).pagamentoPrazoEm = new Date(Date.now() - 1000).toISOString()
   assert.equal((await s.api.pedidos.obter(outro.id)).status, 'Cancelado')
 })
+
+test('Assinatura simulada — ativar renova sozinha quando a Box está perto do fim; cancelar desliga; não duplica', async () => {
+  const s = await criarDemonstracao(new Date(), { pagamento: true })
+  await entrarComo(s, 'carlos@email.com')                          // a última Box do Carlos foi entregue há 28 dias
+  assert.equal((await s.api.assinatura.obter()).ativa, false)
+  const ativa = await s.api.assinatura.ativar()
+  assert.equal(ativa.ativa, true)
+  const meus = await s.api.pedidos.meus()
+  const novo = meus.find((p) => p.status === 'EmSeparacao')       // renovou e pagou (simulado) sozinha
+  assert.ok(novo, 'deveria ter criado a próxima Box')
+  assert.equal(meus.filter((p) => ['AguardandoPagamento', 'Pendente', 'EmSeparacao'].includes(p.status)).length, 1)
+  await s.api.assinatura.ativar()                                  // ativar de novo não duplica
+  assert.equal((await s.api.pedidos.meus()).filter((p) => p.status === 'EmSeparacao').length, 1)
+  assert.equal((await s.api.assinatura.cancelar()).ativa, false)
+})
+
+test('Assinatura simulada — "renovar agora" respeita Box em andamento e só vale para paciente', async () => {
+  const s = await criarDemonstracao(new Date(), { pagamento: true })
+  await entrarComo(s, 'carlos@email.com')
+  await s.api.assinatura.ativar()
+  const r = await s.api.assinatura.renovarAgora()
+  assert.equal(r.renovou, false)
+  assert.match(r.motivo, /em andamento/)
+  await entrarComo(s, 'bruno@medflow.com.br')
+  await assert.rejects(() => s.api.assinatura.obter(), status(403))
+})

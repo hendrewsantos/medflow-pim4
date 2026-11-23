@@ -80,6 +80,12 @@ export const api = {
     simularExpiracao: (id) => post(`/pedidos/${id}/pagamento/expirar`),
     finalizarBox: (id) => post(`/pedidos/${id}/finalizar-box`),
   },
+  assinatura: {
+    obter: () => get('/assinatura'),
+    ativar: () => post('/assinatura/ativar'),
+    cancelar: () => post('/assinatura/cancelar'),
+    renovarAgora: () => post('/assinatura/renovar-agora'),
+  },
   entregas: {
     disponiveis: () => get('/entregas/disponiveis'),
     minhas: () => get('/entregas/minhas'),

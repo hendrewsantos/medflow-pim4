@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import Icone from '../../components/Icone.vue'
 import StatusPill from '../../components/StatusPill.vue'
 import Esqueleto from '../../components/Esqueleto.vue'
+import RenovacaoAutomatica from '../../components/RenovacaoAutomatica.vue'
 import LinhaDoTempo from '../../components/LinhaDoTempo.vue'
 import OrganizadorHorarios from '../../components/OrganizadorHorarios.vue'
 import { api } from '../../services/api.js'
@@ -93,6 +94,7 @@ const irParaHorarios = () => document.getElementById('horarios')?.scrollIntoView
       </section>
     </div>
     <aside class="stack-lg">
+      <RenovacaoAutomatica @mudou="carregar" />
       <section v-if="renovacao" class="card stack" aria-label="Próxima renovação"><span class="eyebrow">Próxima renovação</span>
         <template v-if="renovacao.temBox">
           <p class="renov-dias"><strong>{{ renovacao.diasRestantes > 0 ? renovacao.diasRestantes : 0 }}</strong> {{ renovacao.diasRestantes === 1 ? 'dia' : 'dias' }} até o fim da sua Box</p>

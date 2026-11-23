@@ -34,7 +34,7 @@ const ymd = (d) => { const x = new Date(d); return `${x.getFullYear()}-${String(
 export function criarServidor({ relogio } = {}) {
   let agoraFixo = null
   const agora = () => (agoraFixo ? new Date(agoraFixo) : relogio ? relogio() : new Date())
-  const estado = { pagamento: { habilitado: false, prazoMinutos: 3, taxaEntrega: 9.9 }, seq: {}, usuarios: [], receitas: [], medicamentos: [], tratamentos: [], pedidos: [], movimentacoes: [] }
+  const estado = { assinaturas: [], pagamento: { habilitado: false, prazoMinutos: 3, taxaEntrega: 9.9 }, seq: {}, usuarios: [], receitas: [], medicamentos: [], tratamentos: [], pedidos: [], movimentacoes: [] }
   let sessao = null
   const novoId = (tipo) => (estado.seq[tipo] = (estado.seq[tipo] || 0) + 1)
   const copia = (o) => JSON.parse(JSON.stringify(o))
@@ -206,6 +206,42 @@ export function criarServidor({ relogio } = {}) {
       return ops.expirarPagamento(p, 'Expiração do pagamento simulada (demonstração). Pedido cancelado e reserva liberada.')
     },
 
+    // ── Assinatura simulada: renovação automática da Box ──
+    assinaturaDe(pacienteId) { return estado.assinaturas.find((x) => x.pacienteId === pacienteId) },
+    ultimaEntrega(pacienteId) {
+      return estado.pedidos.filter((p) => p.pacienteId === pacienteId && p.status === 'Entregue').sort((a, b) => b.atualizadoEm.localeCompare(a.atualizadoEm))[0]
+    },
+    dataDaRenovacao(pacienteId, antecedencia = 5) {
+      const u = ops.ultimaEntrega(pacienteId)
+      return u ? R.somarDias(R.inicioDoDia(u.atualizadoEm), (u.diasCiclo || R.DIAS_CICLO) - antecedencia) : null
+    },
+    renovar(pacienteId, forcar = false) {
+      const a = ops.assinaturaDe(pacienteId)
+      const motivo = (m) => ({ renovou: false, motivo: m })
+      if (!a?.ativa) return motivo('A assinatura não está ativa.')
+      if (estado.pedidos.some((p) => p.pacienteId === pacienteId && ['AguardandoPagamento', 'Pendente', 'EmSeparacao', 'AguardandoEntregador', 'EmRota'].includes(p.status))) return motivo('Já existe uma Box em andamento.')
+      const ultimo = ops.ultimaEntrega(pacienteId)
+      if (!ultimo) return motivo('Ainda não há uma Box entregue para renovar.')
+      if (!forcar && R.inicioDoDia(agora()) < ops.dataDaRenovacao(pacienteId, a.diasAntecedencia)) return motivo('Ainda não é hora de renovar.')
+      const receita = estado.receitas.filter((r) => r.pacienteId === pacienteId && r.status === 'Aprovada' && r.validaAte && R.inicioDoDia(r.validaAte) >= R.inicioDoDia(agora()))
+        .sort((x, y) => y.validaAte.localeCompare(x.validaAte))[0]
+      if (!receita) return motivo('A receita venceu: envie uma nova para a renovação automática.')
+      try {
+        const anterior = dto.pedido(ultimo)
+        const itens = anterior.itens.map((i) => ({ medicamentoId: i.medicamentoId, horarios: i.horarios, dosePorHorario: i.dosePorHorario }))
+        const novo = ops.confirmarPedido(pacienteId, { receitaId: receita.id, itens, enderecoEntrega: ultimo.enderecoEntrega })
+        if (novo.status === 'AguardandoPagamento') ops.aprovarPagamento(novo.id, pacienteId)   // cobrança automática (simulada)
+      } catch (e) {
+        if (e instanceof R.ErroApi) return motivo(e.detail)
+        throw e
+      }
+      a.ultimaRenovacaoEm = iso(agora())
+      return { renovou: true, motivo: null }
+    },
+    renovarVencidas() {
+      for (const a of estado.assinaturas.filter((x) => x.ativa)) ops.renovar(a.pacienteId, false)
+    },
+
     /** Cancela, na leitura, os pedidos cujo prazo de pagamento venceu. */
     expirarVencidos() {
       for (const p of estado.pedidos.filter((x) => x.status === 'AguardandoPagamento' && x.pagamentoPrazoEm && new Date(x.pagamentoPrazoEm) < agora())) ops.expirarPagamento(p)
@@ -285,6 +321,12 @@ export function criarServidor({ relogio } = {}) {
       telefone: usuario(p.pacienteId)?.telefone ?? '', totalSaches: tratamento(p.tratamentoId)?.saches.length ?? 0, status: p.status, tentativa: p.entregas.length }),
     pedidoResumo: (p) => ({ id: p.id, paciente: usuario(p.pacienteId)?.nome ?? '—', status: p.status, criadoEm: p.criadoEm, atualizadoEm: p.atualizadoEm, totalItens: p.itens.length,
       valorTotal: (p.valorMedicamentos || 0) + (p.valorEntrega || 0), pagamentoPrazoEm: p.pagamentoPrazoEm ?? null }),
+    assinatura(pacienteId) {
+      const a = ops.assinaturaDe(pacienteId)
+      const dias = a?.diasAntecedencia ?? 5
+      const proxima = a?.ativa ? ops.dataDaRenovacao(pacienteId, dias) : null
+      return { ativa: !!a?.ativa, ativadaEm: a?.ativadaEm ?? null, proximaRenovacaoEm: proxima ? iso(proxima) : null, diasAntecedencia: dias, ultimaRenovacaoEm: a?.ultimaRenovacaoEm ?? null }
+    },
     pedido(p) {
       const saches = tratamento(p.tratamentoId)?.saches ?? []
       return { id: p.id, pacienteId: p.pacienteId, paciente: usuario(p.pacienteId)?.nome ?? '—', receitaId: p.receitaId, status: p.status, enderecoEntrega: p.enderecoEntrega,
@@ -511,6 +553,20 @@ export function criarServidor({ relogio } = {}) {
       aprovarPagamento: resposta(async (id) => dto.pedido(ops.aprovarPagamento(id, exigir('Paciente').id))),
       simularExpiracao: resposta(async (id) => dto.pedido(ops.simularExpiracao(id, exigir('Paciente').id))),
       finalizarBox: resposta(async (id) => dto.pedido(ops.finalizarBox(id, exigir(...PERFIS_EQUIPE).id))),
+    },
+
+    assinatura: {
+      obter: resposta(async () => { const u = exigir('Paciente'); ops.renovarVencidas(); return dto.assinatura(u.id) }),
+      ativar: resposta(async () => {
+        const u = exigir('Paciente')
+        const a = ops.assinaturaDe(u.id)
+        if (!a) estado.assinaturas.push({ pacienteId: u.id, ativa: true, ativadaEm: iso(agora()), diasAntecedencia: 5, ultimaRenovacaoEm: null })
+        else if (!a.ativa) { a.ativa = true; a.ativadaEm = iso(agora()) }
+        ops.renovarVencidas()
+        return dto.assinatura(u.id)
+      }),
+      cancelar: resposta(async () => { const u = exigir('Paciente'); const a = ops.assinaturaDe(u.id); if (a) a.ativa = false; return dto.assinatura(u.id) }),
+      renovarAgora: resposta(async () => { const u = exigir('Paciente'); const r = ops.renovar(u.id, true); return { ...r, assinatura: dto.assinatura(u.id) } }),
     },
 
     entregas: {

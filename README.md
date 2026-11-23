@@ -39,6 +39,8 @@ Regras principais:
 - **Estoque por lote com FEFO** (vence primeiro, sai primeiro). A **reserva** acontece na confirmação do pedido, em transação, tudo ou nada, com controle de concorrência. A **baixa** acontece quando a Box é finalizada. Testado com 20 pedidos simultâneos sobre o mesmo lote: o reservado nunca passa do saldo.
 - **Catálogo por programas de cuidado.** 81 medicamentos de uso contínuo (72 disponíveis ao paciente), organizados em hipertensão, diabetes, colesterol, tireoide, estômago, vitaminas e minerais, coração e circulação e outros cuidados, com busca e filtro na hora de montar a Box.
 - **Pagamento simulado.** Ao confirmar, o estoque já fica reservado e o pedido aguarda o pagamento por alguns minutos, com contagem regressiva. Pagar leva o pedido à separação (ou à análise da receita); se o prazo vence, o pedido é cancelado e a reserva volta ao estoque. Os preços são fictícios e nenhuma cobrança real nem dado de pagamento existe. Na demonstração, dois botões ("Aprovar pagamento" e "Simular expiração") representam o retorno do meio de pagamento. Detalhes em `docs/CONTRATO_API.md`.
+- **Renovação automática (assinatura simulada).** O paciente liga uma opção e, 5 dias antes de a Box acabar, o sistema pede a próxima com os mesmos medicamentos e horários e faz a cobrança sozinho (simulada). Só renova com receita aprovada e válida e sem outra Box em andamento; o paciente cancela quando quiser. Na demonstração há o botão "Simular renovação agora".
+- **Fita de sachês.** No início do paciente, a Box aparece como uma fita de sachês, um por horário, com o dia, a hora e o que há dentro; a próxima dose fica em destaque.
 - **Máquina de estados do pedido** (Aguardando pagamento, Pendente, Em separação, Aguardando entregador, Em rota, Entregue; Recusado e Cancelado), com histórico. Transição inválida é recusada pela API e também pelo banco.
 - **Pontos de atenção entre medicamentos.** Ao revisar a Box, o paciente vê avisos de combinações a conferir (por exemplo, levotiroxina com omeprazol, ou sinvastatina com anlodipino), e a farmacêutica vê os mesmos avisos na análise da receita. É uma tabela de demonstração, baseada em bulas: informa e nunca bloqueia o pedido, e a validação é da farmacêutica responsável.
 - **Previsão de reposição** por média móvel de 3 meses e **relatórios CSV** (estoque, lotes a vencer e entregas).
@@ -163,10 +165,10 @@ Pela linha de comando: `cd mobile && ./gradlew assembleDebug` (APK em `app/build
 
 ## Testes
 ```bash
-cd backend && dotnet test                      # 54 testes, sem MySQL
+cd backend && dotnet test                      # 58 testes, sem MySQL
 export MEDFLOW_TESTE_MYSQL="server=localhost;port=3307;user=root;password=troque-esta-senha"
-dotnet test                                    # 55 testes (inclui a prova de concorrência em MySQL real)
-cd ../frontend && npm test                     # 31 testes
+dotnet test                                    # 59 testes (inclui a prova de concorrência em MySQL real)
+cd ../frontend && npm test                     # 33 testes
 python scripts/e2e_api.py                      # roteiro ponta a ponta contra a API (banco recém-criado)
 cd ../mobile && ./gradlew testDebugUnitTest    # 18 testes de unidade do app
 ```

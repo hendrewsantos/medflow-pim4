@@ -37,7 +37,7 @@ const NUMEROS = [
   { valor: 72, rotulo: 'medicamentos de uso contínuo para montar a Box' },
   { valor: 30, rotulo: 'dias de tratamento em cada Box' },
   { valor: 4, rotulo: 'perfis de acesso, cada um vendo só o que precisa' },
-  { valor: 85, rotulo: 'testes automatizados do site e da API, todos aprovados' },
+  { valor: 91, rotulo: 'testes automatizados do site e da API, todos aprovados' },
 ]
 
 const PERFIS = [
