@@ -540,3 +540,29 @@ pre.json { background: var(--surface-2); border: 1px solid var(--line); border-r
   .barra .nav { order: 3; flex-basis: 100%; }
   .barra .quem span { display: none; }
 }
+
+/* ── Paleta e superfícies: azul-acinzentado suave (sem branco estourado) e seções planas em vez de blocos ── */
+:root {
+  --bg: #edf2f7;
+  --surface: #ffffff;
+  --surface-2: #e4ecf3;
+  --line: #d6e1ea;
+  --line-strong: #b4c5d4;
+  --ink: #0b2545;
+  --ink-2: #3d546b;
+  --ink-3: #5a7087;
+  --brand: #0b6a8f;
+  --brand-hover: #085470;
+  --brand-ink: #ffffff;
+  --brand-soft: #d9eaf4;
+  --side: #e3edf5;
+  --side-2: #cbdcea;
+  --side-ink: #0b2545;
+  --side-ink-2: #3d546b;
+  --shadow: none;
+}
+.card { background: transparent; border: 0; border-top: 1px solid var(--line-strong); border-radius: 0; box-shadow: none; padding: 18px 0 6px; }
+.kpis { gap: 4px 0; border-top: 1px solid var(--line-strong); padding-top: 4px; }
+.kpi { background: transparent; border: 0; border-radius: 0; padding: 12px 20px 12px 0; }
+.barra { background: var(--surface); }
+.pub-passos .card { border-top: 2px solid var(--line-strong); }
