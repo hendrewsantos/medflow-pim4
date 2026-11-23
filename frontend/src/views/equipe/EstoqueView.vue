@@ -69,8 +69,8 @@ async function salvarMedicamento() {
       <thead><tr><th>Medicamento</th><th>Tarja</th><th>Categoria</th><th class="n">Físico</th><th class="n">Reservado</th><th class="n">Disponível (ciclo)</th><th class="n">Mínimo</th><th></th></tr></thead>
       <tbody>
         <template v-for="m in meds" :key="m.id">
-          <tr class="clicavel" tabindex="0" :aria-expanded="aberto === m.id" @click="aberto = aberto === m.id ? null : m.id" @keydown.enter="aberto = aberto === m.id ? null : m.id">
-            <td><strong>{{ m.nome }} {{ m.concentracao }}</strong><div class="subtle">{{ m.principioAtivo }}{{ m.categoria !== 'Comum' || m.termolabil ? ' · fora do catálogo do paciente' : '' }}</div></td>
+          <tr class="clicavel" tabindex="0" @click="aberto = aberto === m.id ? null : m.id" @keydown.enter="aberto = aberto === m.id ? null : m.id">
+            <td><strong>{{ m.nome }} {{ m.concentracao }}</strong><span class="sr-only">{{ aberto === m.id ? " (lotes abertos)" : " (lotes fechados; Enter para abrir)" }}</span><div class="subtle">{{ m.principioAtivo }}{{ m.categoria !== 'Comum' || m.termolabil ? ' · fora do catálogo do paciente' : '' }}</div></td>
             <td><span class="tarja" :class="`tarja-${m.tarja}`">{{ tarjaTexto(m.tarja) }}</span></td>
             <td><span class="pill" :class="m.categoria === 'Comum' ? 'pill-neutro' : 'pill-espera'">{{ CATEGORIA[m.categoria] ?? m.categoria }}</span> <span v-if="m.termolabil" class="pill pill-frio">Termolábil</span></td>
             <td class="n">{{ numero(m.quantidadeFisica) }}</td><td class="n">{{ numero(m.quantidadeReservada) }}</td>

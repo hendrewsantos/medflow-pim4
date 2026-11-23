@@ -69,6 +69,6 @@ Caddy emite o HTTPS automaticamente para o `DOMINIO` do `.env`. O banco não pub
 `Demo__Semear=true` cria contas e dados fictícios (use só em demonstração). Pipeline de CI: `.github/workflows/ci.yml`.
 
 ## Limites conhecidos
-- O app Android compila (`mobile/gradlew assembleDebug`) e tem 15 testes de unidade; ainda não foi testado em emulador ou celular.
+- O app Android compila (`mobile/gradlew assembleDebug`), tem 15 testes de unidade e foi testado em emulador (Android 14) contra a API real: login do entregador, lista, iniciar rota, abrir mapa e confirmar entrega. Falta testar em celular físico e o perfil do paciente no app.
 - O suporte do .NET 8 termina em novembro de 2026 (migração para versão LTS atual é trabalho futuro).
 - As regras sanitárias foram levantadas em fontes documentais e não substituem parecer de farmacêutico responsável técnico.

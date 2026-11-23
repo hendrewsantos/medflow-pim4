@@ -31,3 +31,8 @@ Feita por execução, sem confiar em texto. Tudo local (Docker + .NET + Vite).
 - Upload de receita e análise pela interface não foram refeitos hoje no navegador (cobertos pelos testes e pelo roteiro da API).
 - Sem hospedagem pública; a stack de produção foi provada localmente com HTTPS.
 - .NET 8 sai de suporte em novembro de 2026.
+
+## Complemento (23/11/2026)
+- **Acessibilidade automática (axe-core 4.9.1, WCAG 2.0/2.1 A e AA, tema claro):** 15 telas (públicas, paciente, equipe, administrador e entregador). Achados: contraste insuficiente nos cabeçalhos de tabela e no texto secundário sobre a linha selecionada, e `aria-expanded` inválido na linha do estoque. Corrigidos; nova varredura: 0 violações em todas as telas.
+- **Receita pela interface:** paciente enviou receita (Em análise) → farmacêutica abriu a análise, preencheu prescritor, CRM, datas e checklist → aprovou → status Aprovada com prescritor e CRM.
+- **App Android em emulador (Pixel 6, Android 14):** login do entregador na API real, lista de Boxes, detalhe, iniciar rota, abrir mapa e confirmar entrega com nome de quem recebeu; o pedido chegou a Entregue.

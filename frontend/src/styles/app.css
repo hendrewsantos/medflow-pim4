@@ -281,7 +281,7 @@ textarea.input { min-height: 84px; resize: vertical; }
 /* ── Tabelas ── */
 .tabela-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
 table.tabela { width: 100%; border-collapse: collapse; font-size: var(--t-md); }
-.tabela th { text-align: left; font-size: var(--t-xs);  color: var(--ink-3); font-weight: 700; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; }
+.tabela th { text-align: left; font-size: var(--t-xs);  color: var(--ink-2); font-weight: 700; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; }
 .tabela td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 .tabela tr:last-child td { border-bottom: 0; }
 .tabela td.n, .tabela th.n { text-align: right; font-variant-numeric: tabular-nums; }
@@ -550,7 +550,7 @@ pre.json { background: var(--surface-2); border: 1px solid var(--line); border-r
   --line-strong: #b4c5d4;
   --ink: #0b2545;
   --ink-2: #3d546b;
-  --ink-3: #5a7087;
+  --ink-3: #506579;
   --brand: #0b6a8f;
   --brand-hover: #085470;
   --brand-ink: #ffffff;
