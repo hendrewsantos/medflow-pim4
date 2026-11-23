@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun LoginScreen(vm: LoginViewModel) {
+fun LoginScreen(vm: LoginViewModel, onCriarConta: (() -> Unit)? = null, onVoltar: (() -> Unit)? = null) {
     val estado by vm.estado.collectAsStateWithLifecycle()
     var email by rememberSaveable { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
@@ -81,6 +81,8 @@ fun LoginScreen(vm: LoginViewModel) {
                 onClick = { vm.entrar(email, senha) },
                 habilitado = !estado.carregando,
             )
+            onCriarConta?.let { BotaoSecundario("Criar conta de paciente", it) }
+            onVoltar?.let { BotaoTexto("Voltar para o início", it) }
             if (estado.carregando) {
                 CircularProgressIndicator(
                     modifier = Modifier.semantics { contentDescription = "Entrando, aguarde" },

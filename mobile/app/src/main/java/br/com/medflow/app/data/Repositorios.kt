@@ -1,5 +1,8 @@
 package br.com.medflow.app.data
 
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -24,6 +27,13 @@ class AuthRepository(
     private val sessao: SessaoStore,
     private val db: MedFlowDb,
 ) : AutenticacaoRepositorio {
+
+    /** Cria a conta de paciente e já entra com ela. */
+    suspend fun cadastrar(pedido: CadastroRequest): Resultado<Sessao> =
+        when (val r = chamar { api.cadastro(pedido.copy(email = pedido.email.trim(), nome = pedido.nome.trim())) }) {
+            is Resultado.Ok -> abrirSessao(r.valor)
+            is Resultado.Falha -> r
+        }
 
     override suspend fun entrar(email: String, senha: String): Resultado<Sessao> {
         return when (val r = chamar { api.login(LoginRequest(email.trim(), senha)) }) {
@@ -53,6 +63,16 @@ class AuthRepository(
                     r
                 }
         }
+    }
+
+    private suspend fun abrirSessao(auth: AuthResponse): Resultado<Sessao> {
+        val u = auth.usuario
+        // Dados em cache de outra pessoa não devem aparecer para este usuário.
+        db.entregaDao().limparTudo()
+        db.pedidoDao().limparTudo()
+        val nova = Sessao(auth.token, u.id, u.nome, u.perfil)
+        sessao.salvar(nova)
+        return Resultado.Ok(nova)
     }
 
     override suspend fun sair(): String? {
@@ -220,5 +240,32 @@ class PedidosRepository(private val api: MedFlowApi, db: MedFlowDb) {
 
     suspend fun aprovarPagamento(id: Int): Resultado<PedidoDto> = chamar { api.aprovarPagamento(id) }
 
+    suspend fun cancelar(id: Int): Resultado<PedidoDto> = chamar { api.cancelarPedido(id) }
+
     suspend fun proximaRenovacao(): Resultado<ProximaRenovacaoDto> = chamar { api.proximaRenovacao() }
+}
+
+/** Tudo o que o paciente faz fora do acompanhamento de pedidos: consulta, Box, receitas, assinatura e dados. */
+class PacienteRepository(private val api: MedFlowApi) {
+    suspend fun meusPedidos() = chamar { api.meusPedidos() }
+    suspend fun catalogo() = chamar { api.catalogo() }
+    suspend fun medicamentos() = chamar { api.medicamentos() }
+    suspend fun receitas() = chamar { api.minhasReceitas() }
+    suspend fun enviarReceita(nome: String, tipo: String, bytes: ByteArray): Resultado<ReceitaDto> = chamar {
+        val parte = okhttp3.MultipartBody.Part.createFormData("arquivo", nome, bytes.toRequestBody(tipo.toMediaTypeOrNull()))
+        api.enviarReceita(parte, "true".toRequestBody("text/plain".toMediaTypeOrNull()))
+    }
+    suspend fun simular(itens: List<ItemBoxRequest>) = chamar { api.simular(itens) }
+    suspend fun confirmar(pedido: ConfirmarPedidoRequest) = chamar { api.confirmarPedido(pedido) }
+    suspend fun cancelarPedido(id: Int) = chamar { api.cancelarPedido(id) }
+    suspend fun assinatura() = chamar { api.assinatura() }
+    suspend fun ativarAssinatura() = chamar { api.ativarAssinatura() }
+    suspend fun cancelarAssinatura() = chamar { api.cancelarAssinatura() }
+    suspend fun renovarAgora() = chamar { api.renovarAgora() }
+    suspend fun meusDados() = chamar { api.meusDados() }
+    suspend fun exportarMeusDados(): Resultado<String> = chamar { api.exportarMeusDados().string() }
+    suspend fun atualizarMeusDados(pedido: AtualizarMeusDadosRequest) = chamar { api.atualizarMeusDados(pedido) }
+    suspend fun revogarSaude() = chamar { api.revogarConsentimento(RevogarConsentimentoRequest("DadosDeSaude")) }
+    suspend fun excluirConta() = chamar { api.excluirConta() }
+    suspend fun alterarSenha(atual: String, nova: String) = chamar { api.alterarSenha(AlterarSenhaRequest(atual, nova)) }
 }

@@ -6,6 +6,7 @@ import androidx.room.Room
 import br.com.medflow.app.data.AuthRepository
 import br.com.medflow.app.data.EntregasRepository
 import br.com.medflow.app.data.MedFlowDb
+import br.com.medflow.app.data.PacienteRepository
 import br.com.medflow.app.data.PedidosRepository
 import br.com.medflow.app.data.SessaoStore
 import br.com.medflow.app.data.SessaoStoreCriptografada
@@ -25,6 +26,7 @@ class AppContainer(contexto: Context) {
     val authRepo = AuthRepository(api, sessao, db)
     val entregasRepo = EntregasRepository(api, db, AgendadorWorkManager(app))
     val pedidosRepo = PedidosRepository(api, db)
+    val pacienteRepo = PacienteRepository(api)
 }
 
 class MedFlowApp : Application() {

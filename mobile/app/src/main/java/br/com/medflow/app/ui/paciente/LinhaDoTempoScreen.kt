@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -75,6 +76,7 @@ fun LinhaDoTempoScreen(vm: LinhaDoTempoViewModel, onVoltar: () -> Unit) {
                 if (pedido.status == StatusPedido.AGUARDANDO_PAGAMENTO && pedido.pagamentoPrazoEm != null) {
                     CartaoPagamento(pedido, estado.pagando, estado.aviso, onAprovar = vm::aprovarPagamento, onPrazo = vm::carregar)
                 }
+                if (pedido.status != StatusPedido.AGUARDANDO_PAGAMENTO) estado.aviso?.let { CartaoMensagem(it) }
                 if (pedido.enderecoEntrega.isNotBlank()) {
                     Text("Entrega em: ${pedido.enderecoEntrega}", style = MaterialTheme.typography.bodyLarge)
                 }
@@ -82,6 +84,19 @@ fun LinhaDoTempoScreen(vm: LinhaDoTempoViewModel, onVoltar: () -> Unit) {
                     Titulo("Medicamentos")
                     pedido.itens.forEach {
                         Text("${it.medicamento} — ${it.quantidade} un.", style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+                if (pedido.status == StatusPedido.AGUARDANDO_PAGAMENTO || pedido.status == "Pendente") {
+                    var confirmando by remember { mutableStateOf(false) }
+                    BotaoSecundario("Cancelar pedido", { confirmando = true }, habilitado = !estado.pagando)
+                    if (confirmando) {
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = { confirmando = false },
+                            title = { Text("Cancelar o pedido ${pedido.id}?") },
+                            text = { Text("Os medicamentos reservados voltam ao estoque e a Box não será montada. Você pode montar outra depois.") },
+                            confirmButton = { BotaoTexto("Cancelar pedido", { confirmando = false; vm.cancelar() }) },
+                            dismissButton = { BotaoTexto("Manter pedido", { confirmando = false }) },
+                        )
                     }
                 }
                 Titulo("O que já aconteceu")

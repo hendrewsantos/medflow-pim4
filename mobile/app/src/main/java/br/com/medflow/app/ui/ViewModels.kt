@@ -298,6 +298,20 @@ class LinhaDoTempoViewModel(private val repo: PedidosRepository, private val ped
         }
     }
 
+    /** Cancela o pedido enquanto ainda não foi separado; a reserva volta ao estoque. */
+    fun cancelar() {
+        viewModelScope.launch {
+            _estado.value = _estado.value.copy(pagando = true, aviso = null)
+            when (val r = repo.cancelar(pedidoId)) {
+                is Resultado.Ok -> {
+                    repo.atualizar()
+                    _estado.value = LinhaDoTempoUiState(carregando = false, pedido = r.valor, aviso = "Pedido cancelado. A reserva voltou ao estoque.")
+                }
+                is Resultado.Falha -> _estado.value = _estado.value.copy(pagando = false, aviso = r.mensagem)
+            }
+        }
+    }
+
     /** Pagamento simulado (só na demonstração): representa o retorno do meio de pagamento. */
     fun aprovarPagamento() {
         viewModelScope.launch {

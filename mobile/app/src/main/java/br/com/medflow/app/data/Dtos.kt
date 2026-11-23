@@ -66,6 +66,8 @@ data class PedidoItemDto(
     val medicamentoId: Int = 0,
     val medicamento: String,
     val quantidade: Int = 0,
+    val horarios: List<String> = emptyList(),
+    val dosePorHorario: Int = 0,
 )
 
 @Serializable

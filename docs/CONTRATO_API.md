@@ -9,6 +9,7 @@ Códigos: 400 validação · 401 sem token · 403 sem permissão · 404 · 409 c
 - `POST /api/auth/login` `{email,senha}` → `AuthResponse`
 - `GET /api/auth/eu`
 - `POST /api/receitas` (multipart: `arquivo`, `consentimentoSaude`), `GET /api/receitas/minhas`, `GET /api/receitas/pendentes` (Administrador), `GET /api/receitas/{id}/arquivo`, `POST /api/receitas/{id}/recusar {motivo}`
+- `GET /api/medicamentos/catalogo` (qualquer usuário autenticado): todos os medicamentos com especificações, sem quantidades de estoque; `permitidoNaBox` e `motivoForaDaBox` dizem o que entra na Box
 - `GET /api/medicamentos`, `POST/PUT /api/medicamentos` (equipe), `POST /api/medicamentos/{id}/lotes`, `GET /api/medicamentos/movimentacoes`, `GET /api/medicamentos/alertas`
 - `POST /api/pedidos/simular`, `POST /api/pedidos`, `GET /api/pedidos/meus` → `PedidoResumoDto[]`, `GET /api/pedidos/{id}` → `PedidoDto` (tem `historico[]` = linha do tempo), `POST /api/pedidos/{id}/cancelar`, `POST /api/pedidos/{id}/pagamento/aprovar` e `POST /api/pedidos/{id}/pagamento/expirar` (Paciente; só existem na demonstração com `Demo:BotoesDePagamento`, senão 404), `POST /api/pedidos/{id}/finalizar-box` (equipe), `GET /api/pedidos?status=` (equipe)
 - `GET /api/painel` (equipe), `GET/POST /api/usuarios`, `PATCH /api/usuarios/{id}/ativo?valor=true|false` (Administrador)

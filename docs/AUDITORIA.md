@@ -41,7 +41,7 @@ Feita por execução, sem confiar em texto. Tudo local (Docker + .NET + Vite).
 - **Acessibilidade automática (axe-core 4.9.1, WCAG 2.0/2.1 A e AA):** página institucional (`/site`) nos temas claro, escuro e de alto contraste; início do paciente, montar Box (escolha de medicamentos e revisão), pedido aguardando pagamento (com contagem regressiva) e início com pagamento pendente. Resultado: 0 violações. Uma falha de contraste apareceu uma vez no tema escuro e era só a transição de cor ainda em andamento no instante da leitura; repetida após a transição, deu 0.
 - **Pagamento simulado:** confirmar → Aguardando pagamento (estoque reservado, valor e prazo) → aprovar → separação; expirar → cancelado, reserva devolvida. Verificado nos testes de unidade (7 novos), no servidor da demonstração (2 novos), no navegador e no roteiro ponta a ponta contra a API e o MySQL reais (`scripts/e2e_api.py`, 32 verificações). A migração `Pagamento` atualiza também o gatilho do banco que valida as transições do pedido.
 - **Catálogo:** 81 medicamentos (72 visíveis ao paciente); antimicrobianos, controle especial e termolábeis continuam fora da Box.
-- **Testes automatizados agora:** 58 na API (sem MySQL), 33 no site, 18 no app.
+- **Testes automatizados agora:** 59 na API (sem MySQL), 34 no site, 24 no app.
 - **Não verificado:** a expiração por vencimento do prazo (tarefa em segundo plano) foi coberta por teste de unidade e pela leitura do pedido, mas não aguardada em tempo real contra o MySQL; o app Android não foi reaberto com o pagamento (o entregador só enxerga pedidos já pagos).
 
 ## Complemento (23/11/2026, fim do dia): app, assinatura e sachês

@@ -166,7 +166,7 @@ O script descobre o IP do computador, sobe o banco, a API e o site e mostra o en
 5. Se não abrir, o Firewall do Windows está bloqueando: libere as portas 5080 e 5173 para redes privadas (ou aceite o aviso do Windows na primeira vez).
 
 ## App Android
-Kotlin, Jetpack Compose, Retrofit, Room e WorkManager, nos perfis de entregador e paciente. O app usa a mesma identidade visual do site (degradê, paleta e abertura animada de 3 segundos, que respeita "remover animações" do sistema). O paciente vê o pedido com a contagem regressiva do pagamento simulado; na versão de depuração há o botão "Aprovar pagamento (demonstração)". Testado em emulador (Android 14) contra a API real: login do entregador e do paciente, lista de Boxes, iniciar rota, abrir mapa, confirmar entrega, pedido aguardando pagamento e aprovação.
+Kotlin, Jetpack Compose, Retrofit, Room e WorkManager. O app é completo como o site: página inicial, criação de conta, consulta a todos os medicamentos e suas especificações (sem precisar de receita ou pedido), receitas (envio por foto ou PDF), montagem da Box em três passos com avisos de combinação e valores, pedidos com acompanhamento e cancelamento, renovação automática e *Meus dados e privacidade* (corrigir dados, baixar cópia, revogar consentimento, trocar senha, excluir conta). Entregador e paciente entram pelo mesmo login. O app usa a mesma identidade visual do site (degradê, paleta e abertura animada de 3 segundos, que respeita "remover animações" do sistema). O paciente vê o pedido com a contagem regressiva do pagamento simulado; na versão de depuração há o botão "Aprovar pagamento (demonstração)". Testado em emulador (Android 14) contra a API real: login do entregador e do paciente, lista de Boxes, iniciar rota, abrir mapa, confirmar entrega, pedido aguardando pagamento e aprovação.
 
 O app só funciona com a **API e o banco de dados rodando** e alcançáveis pelo aparelho; o site (front-end) não precisa estar aberto.
 
@@ -178,12 +178,12 @@ Pela linha de comando: `cd mobile && ./gradlew assembleDebug` (APK em `app/build
 
 ## Testes
 ```bash
-cd backend && dotnet test                      # 58 testes, sem MySQL
+cd backend && dotnet test                      # 59 testes, sem MySQL
 export MEDFLOW_TESTE_MYSQL="server=localhost;port=3307;user=root;password=troque-esta-senha"
-dotnet test                                    # 59 testes (inclui a prova de concorrência em MySQL real)
-cd ../frontend && npm test                     # 33 testes
+dotnet test                                    # 60 testes (inclui a prova de concorrência em MySQL real)
+cd ../frontend && npm test                     # 34 testes
 python scripts/e2e_api.py                      # roteiro ponta a ponta contra a API (banco recém-criado)
-cd ../mobile && ./gradlew testDebugUnitTest    # 18 testes de unidade do app
+cd ../mobile && ./gradlew testDebugUnitTest    # 24 testes de unidade do app
 ```
 O CI do GitHub roda build, testes com MySQL, auditoria de dependências e imagens Docker a cada envio. Resultados registrados em `docs/AUDITORIA.md` e `docs/evidencias/`.
 

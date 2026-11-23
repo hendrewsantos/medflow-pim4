@@ -25,8 +25,10 @@ import br.com.medflow.app.data.Perfis
 import br.com.medflow.app.data.Sessao
 import br.com.medflow.app.ui.entregador.DetalheEntregaScreen
 import br.com.medflow.app.ui.entregador.ListaEntregasScreen
-import br.com.medflow.app.ui.paciente.LinhaDoTempoScreen
-import br.com.medflow.app.ui.paciente.PedidosScreen
+import br.com.medflow.app.ui.paciente.CadastroViewModel
+import br.com.medflow.app.ui.paciente.PacienteShell
+import br.com.medflow.app.ui.publico.CadastroScreen
+import br.com.medflow.app.ui.publico.InicioPublicoScreen
 
 /** Raiz: sem sessão mostra o login; com sessão, o fluxo do perfil (Entregador ou Paciente). */
 @Composable
@@ -43,7 +45,7 @@ fun MedFlowRoot(container: AppContainer) {
 
     val atual = sessao
     if (atual == null) {
-        LoginScreen(viewModel(factory = LoginViewModel.factory(container)))
+        FluxoPublico(container)
     } else if (atual.perfil == Perfis.ENTREGADOR) {
         FluxoEntregador(container, atual, onSair = saida::sair)
     } else {
@@ -91,34 +93,26 @@ private fun FluxoEntregador(container: AppContainer, sessao: Sessao, onSair: () 
 }
 
 @Composable
-private fun FluxoPaciente(container: AppContainer, sessao: Sessao, onSair: () -> Unit) {
+private fun FluxoPublico(container: AppContainer) {
     val nav = rememberNavController()
-    val pedidosVm: PedidosViewModel = viewModel(
-        key = "pedidos-${sessao.usuarioId}",
-        factory = PedidosViewModel.factory(container),
-    )
-    NavHost(navController = nav, startDestination = "pedidos", enterTransition = entradaDeTela(), exitTransition = saidaDeTela(), popEnterTransition = entradaDeTela(), popExitTransition = saidaDeTela()) {
-        composable("pedidos") {
-            PedidosScreen(
-                vm = pedidosVm,
-                nome = sessao.nome,
-                onAbrir = { id -> nav.navigate("pedido/$id") },
-                onSair = onSair,
-            )
+    NavHost(
+        navController = nav, startDestination = "inicio",
+        enterTransition = entradaDeTela(), exitTransition = saidaDeTela(), popEnterTransition = entradaDeTela(), popExitTransition = saidaDeTela(),
+    ) {
+        composable("inicio") {
+            InicioPublicoScreen(onEntrar = { nav.navigate("entrar") }, onCriarConta = { nav.navigate("cadastro") })
         }
-        composable(
-            route = "pedido/{pedidoId}",
-            arguments = listOf(navArgument("pedidoId") { type = NavType.IntType }),
-        ) { entrada ->
-            val id = entrada.arguments?.getInt("pedidoId") ?: 0
-            val vm: LinhaDoTempoViewModel = viewModel(
-                key = "tempo-${sessao.usuarioId}-$id",
-                factory = LinhaDoTempoViewModel.factory(container, id),
-            )
-            LinhaDoTempoScreen(vm = vm, onVoltar = { nav.popBackStack() })
+        composable("entrar") {
+            LoginScreen(viewModel(factory = LoginViewModel.factory(container)), onCriarConta = { nav.navigate("cadastro") }, onVoltar = { nav.popBackStack() })
+        }
+        composable("cadastro") {
+            CadastroScreen(viewModel(factory = CadastroViewModel.factory(container)), onVoltar = { nav.popBackStack() })
         }
     }
 }
+
+@Composable
+private fun FluxoPaciente(container: AppContainer, sessao: Sessao, onSair: () -> Unit) = PacienteShell(container, sessao, onSair)
 
 /** Telas entram esmaecendo e deslizando de leve; com "remover animações" do sistema, só esmaecem. */
 @Composable
