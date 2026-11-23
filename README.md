@@ -56,6 +56,8 @@ Regras principais:
 |---|---|---|
 | ![Início do paciente](docs/prints/10-paciente-inicio.jpg) | ![Montar Box](docs/prints/11-paciente-montar-box.jpg) | ![Pedidos do paciente](docs/prints/12-paciente-pedidos.jpg) |
 
+![Fita de sachês do paciente](docs/prints/13-paciente-saches.jpg)
+
 ### Administrador (farmacêutica RT)
 | Painel | Análise de receita |
 |---|---|

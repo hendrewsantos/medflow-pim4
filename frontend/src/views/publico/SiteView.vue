@@ -31,7 +31,7 @@ const TOUR = [
   { rotulo: 'Painel', quem: 'Farmacêutica', img: '/site/20-admin-painel.jpg', alt: 'Painel da operação com indicadores', texto: 'O painel mostra tempo de ciclo, entregas na primeira tentativa, estoque abaixo do mínimo e lotes a vencer.' },
 ]
 const INTERVALO = 6000
-const VERSAO_IMAGENS = 3 // muda quando os prints são refeitos, para o navegador não usar a cópia antiga
+const VERSAO_IMAGENS = 4 // muda quando os prints são refeitos, para o navegador não usar a cópia antiga
 
 const NUMEROS = [
   { valor: 72, rotulo: 'medicamentos de uso contínuo para montar a Box' },
