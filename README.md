@@ -1,74 +1,216 @@
-# MedFlow Solutions — PIM IV (UNIP, ADS)
+# MedFlow Solutions
 
-Plataforma web e mobile para gestão e entrega rastreável de medicamentos de uso contínuo (Box de 30 dias com sachês por horário).
-Projeto acadêmico, organização fictícia, **dados fictícios**. Evolução do PIM III; o código do PIM III continua intacto no repositório original.
+[![CI](https://github.com/hendrewsantos/medflow-pim4/actions/workflows/ci.yml/badge.svg)](https://github.com/hendrewsantos/medflow-pim4/actions/workflows/ci.yml)
 
-| Parte | Tecnologia | Pasta |
+Plataforma web e mobile para **gestão e entrega rastreável de medicamentos de uso contínuo**. O paciente envia a receita, monta uma Box de 30 dias com sachês separados por horário, a farmácia confere e separa, e um entregador leva até a porta. Cada etapa fica registrada.
+
+Projeto Integrado Multidisciplinar IV (PIM IV) do curso de Análise e Desenvolvimento de Sistemas da UNIP. A organização e todos os dados são **fictícios**. É a evolução do PIM III (o MedFlow original), refeita com API em camadas, banco com regras próprias, app Android, testes e pipeline.
+
+![Tela inicial](docs/prints/00-inicio-publico.jpg)
+
+## Sumário
+1. [O que o sistema faz](#o-que-o-sistema-faz)
+2. [Telas](#telas)
+3. [Contas de teste](#contas-de-teste)
+4. [Como abrir o sistema](#como-abrir-o-sistema)
+5. [Roteiro de 5 minutos para conhecer](#roteiro-de-5-minutos-para-conhecer)
+6. [Abrir no celular](#abrir-no-celular)
+7. [App Android](#app-android)
+8. [Testes](#testes)
+9. [Como o projeto é organizado](#como-o-projeto-é-organizado)
+10. [Banco de dados](#banco-de-dados)
+11. [Segurança e LGPD](#segurança-e-lgpd)
+12. [Limites conhecidos](#limites-conhecidos)
+13. [Documentação](#documentação)
+14. [Equipe](#equipe)
+
+## O que o sistema faz
+Quatro perfis, cada um vendo só o que precisa:
+
+| Perfil | O que faz |
+|---|---|
+| **Paciente** | Envia a receita com consentimento específico, monta a Box (medicamentos, horários e dose), confirma, acompanha a linha do tempo, vê a próxima renovação e exerce os direitos da LGPD (exportar, corrigir, revogar e excluir os dados). |
+| **Administrador (farmacêutica RT)** | Analisa a receita (prescritor, CRM, datas, checklist de seis itens e conferência item a item), aprova ou recusa com motivo, gerencia estoque, usuários internos e vê o painel e os relatórios CSV. |
+| **Funcionário (operador)** | Separa a Box com etiquetas por sachê e finaliza, o que dá a baixa definitiva no estoque. Acompanha pedidos e estoque. |
+| **Entregador** | Vê só nome, endereço e quantidade de sachês. Inicia a rota, abre o endereço no mapa e confirma a entrega com o nome de quem recebeu (ou registra ocorrência). |
+
+Regras principais:
+- **Receita analisada por humano.** Só medicamento de categoria Comum e não termolábil entra na Box; antimicrobianos, controlados e termolábeis ficam fora.
+- **Estoque por lote com FEFO** (vence primeiro, sai primeiro). A **reserva** acontece na confirmação do pedido, em transação, tudo ou nada, com controle de concorrência. A **baixa** acontece quando a Box é finalizada. Testado com 20 pedidos simultâneos sobre o mesmo lote: o reservado nunca passa do saldo.
+- **Máquina de estados do pedido** (Pendente, Em separação, Aguardando entregador, Em rota, Entregue; Recusado e Cancelado), com histórico. Transição inválida é recusada pela API e também pelo banco.
+- **Previsão de reposição** por média móvel de 3 meses e **relatórios CSV** (estoque, lotes a vencer e entregas).
+- **Acessibilidade:** tema claro (padrão), escuro e de alto contraste; tradução para Libras (VLibras); varredura automática WCAG 2.1 A/AA sem violações nas 15 telas.
+
+## Telas
+### Paciente
+| Início | Montar Box | Meus pedidos |
 |---|---|---|
-| API REST | ASP.NET Core 8, EF Core 8 (Pomelo), MySQL 8.4 | `backend/` (Api, Core, Infrastructure, Tests) |
-| Web | Vue 3, Vite, Pinia, Vue Router | `frontend/` |
-| Mobile | Kotlin, Jetpack Compose, Retrofit, Room, WorkManager | `mobile/` |
-| Banco | migrações EF + script SQL único | `database/` |
-| Contêineres e CI | Docker, Compose, Caddy, GitHub Actions | `docker-compose*.yml`, `deploy/`, `.github/` |
+| ![Início do paciente](docs/prints/10-paciente-inicio.jpg) | ![Montar Box](docs/prints/11-paciente-montar-box.jpg) | ![Pedidos do paciente](docs/prints/12-paciente-pedidos.jpg) |
 
-Contrato da API: `docs/CONTRATO_API.md`. Roadmap e registro do que foi feito: `ROADMAP.md`. Evidências: `docs/evidencias/` e `database/resultado_testes_banco.txt`.
+### Administrador (farmacêutica RT)
+| Painel | Análise de receita |
+|---|---|
+| ![Painel](docs/prints/20-admin-painel.jpg) | ![Análise de receita](docs/prints/21-admin-analise-receita.jpg) |
 
-## O que o sistema faz (resumo)
-- Quatro perfis: Paciente, Administrador (farmacêutico RT), Funcionário (operador) e Entregador. Perfil vem do token JWT, nunca do navegador.
-- Senha com PBKDF2-SHA256 (600 mil iterações) e bloqueio após 5 falhas.
-- Receita analisada por humano (prescritor, CRM, checklist e conferência item a item). Só medicamento de categoria Comum e não termolábil entra na Box.
-- Estoque por lote com FEFO: **reserva na confirmação** do pedido (tudo ou nada, em transação, com controle de concorrência) e **baixa na finalização** da Box.
-- Máquina de estados do pedido com histórico; entregador vê só os dados mínimos para entregar.
-- LGPD: consentimento com versão e data, exportar, corrigir, revogar e excluir (anonimização).
-- Banco com 14 tabelas, 4 procedimentos, 5 gatilhos, 4 visões e restrições CHECK.
-- Previsão de reposição por média móvel de 3 meses e relatórios CSV.
+| Pedidos | Estoque | Usuários |
+|---|---|---|
+| ![Pedidos](docs/prints/22-admin-pedidos.jpg) | ![Estoque](docs/prints/23-admin-estoque.jpg) | ![Usuários](docs/prints/24-admin-usuarios.jpg) |
 
-## Como rodar (Windows, PowerShell ou Git Bash)
-Pré-requisitos: .NET 8 SDK, Node 22+, Docker Desktop. Para o app: Android Studio (veja `mobile/README.md`).
+### Operador e entregador
+| Separação com etiquetas | Entregador no celular |
+|---|---|
+| ![Separação](docs/prints/30-operador-separacao.png) | <img src="docs/prints/40-entregador-celular.png" width="260" alt="Entregador no celular"> |
+
+### App Android (entregador)
+<img src="docs/prints/50-app-android-lista.png" width="240" alt="Lista de Boxes no app"> <img src="docs/prints/51-app-android-entrega.png" width="240" alt="Entrega confirmada no app">
+
+## Contas de teste
+Dados fictícios, criados automaticamente quando a API roda em modo de desenvolvimento (ou com `Demo__Semear=true`).
+
+| Perfil | E-mail | Senha |
+|---|---|---|
+| Paciente | `carlos@email.com` | `MedFlow2026` |
+| Administrador (farmacêutica RT) | `juliana@medflow.com.br` | `MedFlow2026` |
+| Funcionário (operador) | `bruno@medflow.com.br` | `MedFlow2026` |
+| Entregador | `rafael@medflow.com.br` | `MedFlow2026` |
+
+> Esta senha existe só para demonstração. Nunca use essa senha nem esses dados em um ambiente real.
+
+## Como abrir o sistema
+Escolha um dos dois caminhos.
+
+### Caminho 1: só o site, em modo demonstração (2 minutos, sem banco e sem API)
+Precisa de **Node 22 ou mais novo**.
 
 ```bash
-# 1) Banco de dados (MySQL 8.4 em contêiner, porta 3307)
-docker compose up -d mysql
+git clone https://github.com/hendrewsantos/medflow-pim4.git
+cd medflow-pim4/frontend
+npm ci
+npm run dev:demo
+```
+Abra **http://localhost:5173**. Nesse modo os dados ficam no navegador e existe uma barra no topo para trocar de perfil com um clique. Serve para olhar as telas; as regras de banco e de concorrência só existem no caminho 2.
 
-# 2) API (em Development aplica as migrações e cria os dados de demonstração)
+### Caminho 2: sistema completo (site, API e banco)
+Precisa de **.NET 8 SDK**, **Node 22 ou mais novo** e **Docker Desktop** aberto.
+
+**1. Banco de dados** (MySQL 8.4 em contêiner, porta 3307):
+```bash
+docker compose up -d mysql
+```
+
+**2. API** (em desenvolvimento ela cria as tabelas e os dados fictícios sozinha). Em um terminal Git Bash:
+```bash
 cd backend
 export ASPNETCORE_ENVIRONMENT=Development
 export ConnectionStrings__MedFlow="server=localhost;port=3307;database=medflow;user=root;password=troque-esta-senha"
 export Jwt__Chave="uma-chave-local-com-pelo-menos-32-caracteres"
 dotnet run --project src/MedFlow.Api --urls http://localhost:5080
-# Swagger: http://localhost:5080/swagger   ·   saúde: /health/live e /health/ready
-
-# 3) Web
-cd frontend && npm ci && npm run dev        # http://localhost:5173
-npm run dev:demo                            # modo demonstração sem API e sem banco (plano B)
 ```
-No PowerShell use `$env:NOME = "valor"` no lugar de `export`. As contas de demonstração (e a senha delas) estão em
-`backend/src/MedFlow.Infrastructure/Persistencia/DadosIniciais.cs` e só existem em Development ou com `Demo__Semear=true`.
+No PowerShell, troque `export NOME="valor"` por `$env:NOME = "valor"`. Teste: http://localhost:5080/health/ready deve responder 200. A documentação interativa da API fica em http://localhost:5080/swagger.
+
+**3. Site** (outro terminal):
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+Abra **http://localhost:5173** e entre com uma das [contas de teste](#contas-de-teste).
+
+**Para parar:** `Ctrl+C` nos terminais e `docker compose down` (acrescente `-v` para apagar também os dados).
+
+## Roteiro de 5 minutos para conhecer
+1. Entre como **Paciente** (`carlos@email.com`). Em *Montar Box*, avance com a receita aprovada, escolha **Losartana**, marque 08:00 e 20:00, revise e confirme. O pedido vai para *Em separação* e o estoque é reservado por lote.
+2. Saia e entre como **Funcionário** (`bruno@medflow.com.br`). Em *Pedidos*, veja as etiquetas por sachê e clique em **Finalizar Box e dar baixa**.
+3. Entre como **Entregador** (`rafael@medflow.com.br`). Clique em **Iniciar rota** e depois **Confirmar entrega** informando o nome de quem recebeu.
+4. Volte como **Paciente** e abra *Meus pedidos*: a linha do tempo mostra todas as etapas com data e hora.
+5. Entre como **Administrador** (`juliana@medflow.com.br`). Veja o *Painel*, o *Estoque* (o saldo disponível só conta lotes que duram o ciclo inteiro), os *Usuários* e a *Análise de receitas*. Para ver a análise, envie uma receita nova como paciente (PDF, PNG ou JPG) e abra-a como administrador.
+
+## Abrir no celular
+Com o celular e o computador na **mesma rede Wi-Fi**, sem instalar nada no aparelho:
+
+1. Descubra o IP do computador (`ipconfig`, procure *Endereço IPv4*; vamos supor `192.168.0.10`).
+2. Suba a API aceitando conexões da rede e liberando o site. Em Git Bash, a partir da pasta `backend`:
+   ```bash
+   export Cors__Origens__0="http://localhost:5173"
+   export Cors__Origens__1="http://192.168.0.10:5173"
+   dotnet run --project src/MedFlow.Api --urls http://0.0.0.0:5080
+   ```
+3. Suba o site apontando para essa API (pasta `frontend`):
+   ```bash
+   export VITE_API_URL="http://192.168.0.10:5080"
+   npm run dev -- --host
+   ```
+4. No navegador do celular, abra `http://192.168.0.10:5173`.
+5. Se não abrir, o Firewall do Windows está bloqueando: libere as portas 5080 e 5173 para redes privadas (ou aceite o aviso do Windows na primeira vez).
+
+## App Android
+Kotlin, Jetpack Compose, Retrofit, Room e WorkManager, nos perfis de entregador e paciente. Testado em emulador (Android 14) contra a API real: login, lista de Boxes, iniciar rota, abrir mapa e confirmar entrega.
+
+1. Instale o **Android Studio** e abra a pasta `mobile`.
+2. Em *Device Manager*, crie um emulador (Pixel, Android 14) e clique em **Run**. No emulador o app já aponta para a API do computador (`http://10.0.2.2:5080/`).
+3. Para celular físico ou outra URL, veja `mobile/README.md`.
+
+Pela linha de comando: `cd mobile && ./gradlew assembleDebug` (APK em `app/build/outputs/apk/debug/`).
 
 ## Testes
 ```bash
-cd backend && dotnet test                   # 47 testes sem MySQL
-# com MySQL real (inclui a prova de concorrência: 20 pedidos simultâneos sobre o mesmo lote):
+cd backend && dotnet test                      # 47 testes, sem MySQL
 export MEDFLOW_TESTE_MYSQL="server=localhost;port=3307;user=root;password=troque-esta-senha"
-dotnet test                                 # 48 testes
-cd ../frontend && npm test                  # 26 testes
-python scripts/e2e_api.py                   # roteiro ponta a ponta contra a API real (banco recém-criado)
+dotnet test                                    # 48 testes (inclui a prova de concorrência em MySQL real)
+cd ../frontend && npm test                     # 26 testes
+python scripts/e2e_api.py                      # roteiro ponta a ponta contra a API (banco recém-criado)
+cd ../mobile && ./gradlew testDebugUnitTest    # 15 testes de unidade do app
 ```
+O CI do GitHub roda build, testes com MySQL, auditoria de dependências e imagens Docker a cada envio. Resultados registrados em `docs/AUDITORIA.md` e `docs/evidencias/`.
+
+## Como o projeto é organizado
+| Pasta | Conteúdo |
+|---|---|
+| `backend/` | API ASP.NET Core 8 em camadas: `MedFlow.Api` (controllers, segurança), `MedFlow.Core` (domínio e casos de uso), `MedFlow.Infrastructure` (EF Core, MySQL, migrações), `MedFlow.Tests` |
+| `frontend/` | Site em Vue 3, Vite, Pinia e Vue Router |
+| `mobile/` | App Android (Kotlin e Compose) |
+| `database/` | Script SQL único e roteiro de verificação do banco |
+| `docs/` | Contrato da API, auditoria, divergências em relação ao documento do trabalho, prints e evidências |
+| `deploy/`, `docker-compose*.yml`, `.github/` | Contêineres (dev e produção com HTTPS automático via Caddy) e pipeline de CI |
+
+Tecnologias: ASP.NET Core 8, EF Core 8 (Pomelo), MySQL 8.4, JWT, Vue 3, Kotlin, Docker, GitHub Actions.
 
 ## Banco de dados
-- Migrações: `dotnet ef migrations list --project backend/src/MedFlow.Infrastructure` (ferramenta local: `dotnet tool restore`).
-- Script único (DDL + programabilidade): `database/medflow_schema.sql` (`mysql ... medflow < database/medflow_schema.sql` em banco vazio).
-- Verificação de procedimentos, gatilhos, restrições e visões: `database/testes_banco.sql` → `database/resultado_testes_banco.txt`.
+- 14 tabelas, 4 procedimentos armazenados, 5 gatilhos, 4 visões e restrições CHECK.
+- Migrações: `dotnet ef migrations list --project backend/src/MedFlow.Infrastructure` (antes, `dotnet tool restore`).
+- Script único: `database/medflow_schema.sql` roda do zero em um MySQL 8.4 vazio.
+- Verificação do comportamento: `database/testes_banco.sql` (saída em `database/resultado_testes_banco.txt`).
+- Nota: a regra de estoque roda no serviço da API (transação do EF Core com versão de concorrência). Os procedimentos equivalentes existem no banco e foram testados à parte. Os gatilhos de transição de status e de imutabilidade das movimentações estão ativos nas operações da API.
 
-## Produção / homologação
-```bash
-cp deploy/.env.example .env      # preencha (nunca versione)
-docker compose -f docker-compose.prod.yml up -d --build
-```
-Caddy emite o HTTPS automaticamente para o `DOMINIO` do `.env`. O banco não publica porta; dados e receitas ficam em volumes.
-`Demo__Semear=true` cria contas e dados fictícios (use só em demonstração). Pipeline de CI: `.github/workflows/ci.yml`.
+## Segurança e LGPD
+- Senha com PBKDF2-SHA256 (600 mil iterações), bloqueio após 5 falhas e token JWT de 60 minutos. O perfil vem do token, nunca do navegador.
+- Autorização por política em cada rota, erros no padrão ProblemDetails, cabeçalhos de segurança (incluindo CSP), CORS restrito e verificação de saúde (`/health/live`, `/health/ready`).
+- Dados de saúde só com consentimento específico e versionado. O paciente exporta, corrige, revoga e exclui (anonimização) os próprios dados. O entregador não vê itens, lotes nem receita.
 
 ## Limites conhecidos
-- O app Android compila (`mobile/gradlew assembleDebug`), tem 15 testes de unidade e foi testado em emulador (Android 14) contra a API real: login do entregador, lista, iniciar rota, abrir mapa e confirmar entrega. Falta testar em celular físico e o perfil do paciente no app.
-- O suporte do .NET 8 termina em novembro de 2026 (migração para versão LTS atual é trabalho futuro).
-- As regras sanitárias foram levantadas em fontes documentais e não substituem parecer de farmacêutico responsável técnico.
+- O app Android não foi testado em celular físico, e o perfil do paciente no app ainda não foi exercitado em emulador.
+- O suporte do .NET 8 termina em 10 de novembro de 2026; a migração para uma versão LTS atual é trabalho futuro.
+- As regras sanitárias vêm de fontes documentais e não substituem o parecer de um farmacêutico responsável técnico.
+- Não há hospedagem pública; a pilha de produção foi provada localmente (`docker-compose.prod.yml`, com `deploy/.env.example`).
+
+## Documentação
+- Contrato da API: [`docs/CONTRATO_API.md`](docs/CONTRATO_API.md)
+- Auditoria e resultados reais: [`docs/AUDITORIA.md`](docs/AUDITORIA.md)
+- Diferenças entre o texto do trabalho e o sistema: [`docs/DIVERGENCIAS_DOCUMENTO.md`](docs/DIVERGENCIAS_DOCUMENTO.md)
+- Roteiro e registro de decisões: [`ROADMAP.md`](ROADMAP.md)
+
+## Equipe
+Grupo do PIM IV, UNIP, curso de Análise e Desenvolvimento de Sistemas (São Paulo, 2026). Orientador: Prof. André Gomes de Lira Muniz.
+
+| Integrante | GitHub |
+|---|---|
+| Gabriel Pimenta de Jesus | |
+| Hendrew dos Santos Braz | [@hendrewsantos](https://github.com/hendrewsantos) |
+| Manuel Douglas Silva Alves | |
+| Matheus Renato Bento Estevo | [@MatheusRenat0](https://github.com/MatheusRenat0) |
+| Matheus Santos Ribeiro | |
+
+O PIM III, que deu origem a este projeto, está no repositório original do grupo.
+
+## Licença
+Projeto acadêmico. Ainda não há licença de uso definida; o código está aberto para consulta e avaliação.
