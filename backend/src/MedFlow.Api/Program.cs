@@ -108,7 +108,12 @@ app.Use(async (contexto, proximo) =>
     contexto.Response.Headers["X-Content-Type-Options"] = "nosniff";
     contexto.Response.Headers["Referrer-Policy"] = "no-referrer";
     contexto.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
-    if (contexto.Request.Path.StartsWithSegments("/api")) contexto.Response.Headers["Cache-Control"] = "no-store";
+    if (contexto.Request.Path.StartsWithSegments("/api"))
+    {
+        contexto.Response.Headers["Cache-Control"] = "no-store";
+        // A API só devolve JSON/CSV/arquivos: nada precisa ser carregado nem embutido em outra página.
+        contexto.Response.Headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'";
+    }
     await proximo();
 });
 
