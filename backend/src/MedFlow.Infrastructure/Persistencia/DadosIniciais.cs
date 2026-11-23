@@ -16,7 +16,7 @@ public static class DadosIniciais
 
     public static async Task AplicarAsync(AppDbContext db, IPasswordHasher hasher, IArquivoStorage storage, DateTime agora, CancellationToken ct = default)
     {
-        await db.Database.EnsureCreatedAsync(ct);
+        await db.Database.MigrateAsync(ct);
         if (await db.Usuarios.AnyAsync(ct)) return;
 
         Usuario NovoUsuario(string nome, string email, string cpf, PerfilUsuario perfil, string? endereco = null) =>
@@ -67,7 +67,13 @@ public static class DadosIniciais
         var clonazepam = Med("Clonazepam", "clonazepam", "2 mg", "comprimido", Tarja.Preta, 30, controlado: true);
         clonazepam.RegistrarEntrada("CLO2605", hoje.AddMonths(-3), hoje.AddMonths(9), 60, agora);
 
-        var medicamentos = new[] { losartana, metformina, sinvastatina, aas, omeprazol, levotiroxina, atenolol, hidroclorotiazida, anlodipino, clonazepam };
+        // Categorias regulatórias de demonstração (RN09): ficam fora da Box e não aparecem ao paciente.
+        var amoxicilina = new Medicamento("Amoxicilina", "amoxicilina", "500 mg", "cápsula", Tarja.Vermelha, false, 30, CategoriaRegulatoria.Antimicrobiano);
+        amoxicilina.RegistrarEntrada("AMX2610", hoje.AddMonths(-2), hoje.AddMonths(10), 120, agora);
+        var insulina = new Medicamento("Insulina NPH", "insulina humana", "100 UI/mL", "caneta", Tarja.Vermelha, false, 20, CategoriaRegulatoria.Comum, termolabil: true);
+        insulina.RegistrarEntrada("INS2611", hoje.AddMonths(-1), hoje.AddMonths(5), 40, agora);
+
+        var medicamentos = new[] { amoxicilina, insulina, losartana, metformina, sinvastatina, aas, omeprazol, levotiroxina, atenolol, hidroclorotiazida, anlodipino, clonazepam };
         db.Medicamentos.AddRange(medicamentos);
         await db.SaveChangesAsync(ct);
 
@@ -78,7 +84,7 @@ public static class DadosIniciais
         var pdf = Encoding.ASCII.GetBytes("%PDF-1.4\n% Receita de demonstração MedFlow\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF");
         var caminho = await storage.SalvarAsync(pdf, ".pdf", ct);
         var receita = new Receita(carlos.Id, caminho, "receita-carlos.pdf", "application/pdf", pdf.Length, agora.AddDays(-10));
-        receita.Aprovar(juliana.Id, hoje.AddMonths(5), agora.AddDays(-9));
+        receita.Aprovar(juliana.Id, hoje.AddMonths(5), agora.AddDays(-9), "Dra. Marina Teixeira", "CRM 123456/SP", hoje.AddDays(-12));
         db.Receitas.Add(receita);
         await db.SaveChangesAsync(ct);
     }

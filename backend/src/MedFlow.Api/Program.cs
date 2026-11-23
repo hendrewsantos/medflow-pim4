@@ -9,6 +9,7 @@ using MedFlow.Infrastructure;
 using MedFlow.Infrastructure.Persistencia;
 using MedFlow.Infrastructure.Seguranca;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
@@ -115,17 +116,27 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-
-    using var escopo = app.Services.CreateScope();
-    var db = escopo.ServiceProvider.GetRequiredService<AppDbContext>();
-    await DadosIniciais.AplicarAsync(db,
-        escopo.ServiceProvider.GetRequiredService<IPasswordHasher>(),
-        escopo.ServiceProvider.GetRequiredService<IArquivoStorage>(),
-        escopo.ServiceProvider.GetRequiredService<IRelogio>().Agora);
 }
 else
 {
     app.UseHsts();
+}
+
+// Banco: em Development (ou com Banco:AplicarMigrations=true) as migrações são aplicadas na inicialização;
+// os dados de demonstração só entram com Demo:Semear=true ou em Development.
+var aplicarMigracoes = app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Banco:AplicarMigrations");
+var semear = app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Demo:Semear");
+if (aplicarMigracoes || semear)
+{
+    using var escopo = app.Services.CreateScope();
+    var db = escopo.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (semear)
+        await DadosIniciais.AplicarAsync(db,
+            escopo.ServiceProvider.GetRequiredService<IPasswordHasher>(),
+            escopo.ServiceProvider.GetRequiredService<IArquivoStorage>(),
+            escopo.ServiceProvider.GetRequiredService<IRelogio>().Agora);
+    else
+        await db.Database.MigrateAsync();
 }
 
 // ── RNF02: HTTPS obrigatório ──

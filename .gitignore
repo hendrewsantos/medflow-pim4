@@ -6,3 +6,4 @@ node_modules/
 .env
 .env.local
 backend/src/MedFlow.Api/storage/
+frontend/dist/

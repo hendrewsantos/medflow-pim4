@@ -46,6 +46,8 @@ internal sealed class ReceitaConfig : IEntityTypeConfiguration<Receita>
         b.Property(x => x.TipoConteudo).HasMaxLength(50).IsRequired();
         b.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
         b.Property(x => x.MotivoRecusa).HasMaxLength(500);
+        b.Property(x => x.PrescritorNome).HasMaxLength(150);
+        b.Property(x => x.PrescritorCrm).HasMaxLength(30);
         b.HasIndex(x => x.Status);
     }
 }
@@ -55,6 +57,7 @@ internal sealed class MedicamentoConfig : IEntityTypeConfiguration<Medicamento>
     public void Configure(EntityTypeBuilder<Medicamento> b)
     {
         b.ToTable("medicamentos");
+        b.Property(x => x.Categoria).HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.Nome).HasMaxLength(150).IsRequired();
         b.Property(x => x.PrincipioAtivo).HasMaxLength(150).IsRequired();
         b.Property(x => x.Concentracao).HasMaxLength(50).IsRequired();
@@ -130,7 +133,7 @@ internal sealed class PedidoItemConfig : IEntityTypeConfiguration<PedidoItem>
 {
     public void Configure(EntityTypeBuilder<PedidoItem> b)
     {
-        b.ToTable("pedido_itens");
+        b.ToTable("itens_pedido");
         b.HasOne(x => x.Medicamento).WithMany().HasForeignKey(x => x.MedicamentoId).OnDelete(DeleteBehavior.Restrict);
         b.HasMany(x => x.Alocacoes).WithOne().HasForeignKey(a => a.PedidoItemId).OnDelete(DeleteBehavior.Cascade);
         b.Navigation(x => x.Alocacoes).UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -150,7 +153,7 @@ internal sealed class HistoricoPedidoConfig : IEntityTypeConfiguration<Historico
 {
     public void Configure(EntityTypeBuilder<HistoricoPedido> b)
     {
-        b.ToTable("historico_pedidos");
+        b.ToTable("historico_pedido");
         b.Property(x => x.De).HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.Para).HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.Observacao).HasMaxLength(500);
