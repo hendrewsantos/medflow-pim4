@@ -8,6 +8,9 @@ Projeto Integrado Multidisciplinar IV (PIM IV) do curso de Análise e Desenvolvi
 
 ![Tela inicial](docs/prints/00-inicio-publico.jpg)
 
+## Vídeo
+O sistema completo em 3 minutos (abertura, página institucional, paciente com pagamento, farmacêutica, operador, entregador e acompanhamento): [`docs/video/medflow-fluxo-completo.mp4`](docs/video/medflow-fluxo-completo.mp4). O arquivo vem junto quando você baixa ou clona o repositório.
+
 ## Sumário
 1. [O que o sistema faz](#o-que-o-sistema-faz)
 2. [Telas](#telas)
@@ -137,7 +140,15 @@ Abra **http://localhost:5173** e entre com uma das [contas de teste](#contas-de-
 5. Entre como **Administrador** (`juliana@medflow.com.br`). Veja o *Painel*, o *Estoque* (o saldo disponível só conta lotes que duram o ciclo inteiro), os *Usuários* e a *Análise de receitas*. Para ver a análise, envie uma receita nova como paciente (PDF, PNG ou JPG) e abra-a como administrador.
 
 ## Abrir no celular
-Com o celular e o computador na **mesma rede Wi-Fi**, sem instalar nada no aparelho:
+**O celular e o computador precisam estar na MESMA rede Wi-Fi.** Nada é instalado no celular: ele só abre o endereço no navegador.
+
+**Jeito rápido (Windows):** com o Docker Desktop aberto, rode na raiz do repositório
+```powershell
+./scripts/abrir-no-celular.ps1
+```
+O script descobre o IP do computador, sobe o banco, a API e o site e mostra o endereço para digitar no celular (algo como `http://192.168.0.10:5173`). Para só ver o endereço, sem subir nada: `./scripts/abrir-no-celular.ps1 -SomenteMostrar`.
+
+**Jeito manual:**
 
 1. Descubra o IP do computador (`ipconfig`, procure *Endereço IPv4*; vamos supor `192.168.0.10`).
 2. Suba a API aceitando conexões da rede e liberando o site. Em Git Bash, a partir da pasta `backend`:
