@@ -20,15 +20,15 @@ const MENU = [['como', 'Como funciona'], ['box', 'A Box'], ['programas', 'Progra
 const ABAS = [
   { rotulo: 'Montar a Box', quem: 'Paciente', img: '/site/11-paciente-montar-box.jpg', alt: 'Tela de montar a Box com medicamentos e filtro por programa', texto: 'O paciente escolhe os medicamentos e os horários. O sistema confere o estoque antes de confirmar.' },
   { rotulo: 'Análise da receita', quem: 'Farmacêutica', img: '/site/21-admin-analise-receita.jpg', alt: 'Tela de análise de receita pela farmacêutica responsável', texto: 'A farmacêutica responsável confere a receita item a item e aprova ou recusa com justificativa.' },
-  { rotulo: 'Separação', quem: 'Operador', img: '/site/30-operador-separacao.png', alt: 'Tela de separação dos sachês por horário', texto: 'A equipe separa os sachês horário a horário, lote a lote, sempre pelo lote que vence primeiro.' },
-  { rotulo: 'Entrega', quem: 'Entregador', img: '/site/40-entregador-celular.png', alt: 'Tela do entregador no celular', retrato: true, texto: 'O entregador vê só endereço, telefone e quantidade de sachês, e registra quem recebeu.' },
+  { rotulo: 'Separação', quem: 'Operador', img: '/site/30-operador-separacao.jpg', alt: 'Tela de separação dos sachês por horário', texto: 'A equipe separa os sachês horário a horário, lote a lote, sempre pelo lote que vence primeiro.' },
+  { rotulo: 'Entrega', quem: 'Entregador', img: '/site/40-entregador-celular.jpg', alt: 'Tela do entregador no celular', retrato: true, texto: 'O entregador vê só endereço, telefone e quantidade de sachês, e registra quem recebeu.' },
 ]
 
 const NUMEROS = [
   { valor: 72, rotulo: 'medicamentos de uso contínuo para montar a Box' },
   { valor: 30, rotulo: 'dias de tratamento em cada Box' },
   { valor: 4, rotulo: 'perfis de acesso, cada um vendo só o que precisa' },
-  { valor: 73, rotulo: 'testes automatizados aprovados' },
+  { valor: 82, rotulo: 'testes automatizados do site e da API, todos aprovados' },
 ]
 
 const PASSOS = [

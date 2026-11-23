@@ -10,7 +10,7 @@ const classe = (i) => (i < atual.value || props.pedido.status === 'Entregue' ? '
 </script>
 
 <template>
-  <ol v-if="atual >= 0" class="timeline" aria-label="Etapas do pedido">
+  <ol v-if="atual >= 0" class="timeline" :style="{ '--etapas': etapas.length }" aria-label="Etapas do pedido">
     <li v-for="(etapa, i) in etapas" :key="etapa" :class="classe(i)" :aria-current="i === atual ? 'step' : undefined">
       <span class="etapa">{{ ETAPA_ROTULO[etapa] }}</span>
       <span class="quando">{{ quando[etapa] ? dataHora(quando[etapa]) : '' }}</span>

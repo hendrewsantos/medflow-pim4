@@ -29,7 +29,7 @@ Quatro perfis, cada um vendo só o que precisa:
 
 | Perfil | O que faz |
 |---|---|
-| **Paciente** | Envia a receita com consentimento específico, monta a Box (medicamentos, horários e dose), confirma, acompanha a linha do tempo, vê a próxima renovação e exerce os direitos da LGPD (exportar, corrigir, revogar e excluir os dados). |
+| **Paciente** | Envia a receita com consentimento específico, monta a Box (medicamentos, horários e dose), confirma, paga (pagamento simulado), acompanha a linha do tempo, vê a próxima renovação e exerce os direitos da LGPD (exportar, corrigir, revogar e excluir os dados). |
 | **Administrador (farmacêutica RT)** | Analisa a receita (prescritor, CRM, datas, checklist de seis itens e conferência item a item), aprova ou recusa com motivo, gerencia estoque, usuários internos e vê o painel e os relatórios CSV. |
 | **Funcionário (operador)** | Separa a Box com etiquetas por sachê e finaliza, o que dá a baixa definitiva no estoque. Acompanha pedidos e estoque. |
 | **Entregador** | Vê só nome, endereço e quantidade de sachês. Inicia a rota, abre o endereço no mapa e confirma a entrega com o nome de quem recebeu (ou registra ocorrência). |
@@ -37,11 +37,17 @@ Quatro perfis, cada um vendo só o que precisa:
 Regras principais:
 - **Receita analisada por humano.** Só medicamento de categoria Comum e não termolábil entra na Box; antimicrobianos, controlados e termolábeis ficam fora.
 - **Estoque por lote com FEFO** (vence primeiro, sai primeiro). A **reserva** acontece na confirmação do pedido, em transação, tudo ou nada, com controle de concorrência. A **baixa** acontece quando a Box é finalizada. Testado com 20 pedidos simultâneos sobre o mesmo lote: o reservado nunca passa do saldo.
-- **Máquina de estados do pedido** (Pendente, Em separação, Aguardando entregador, Em rota, Entregue; Recusado e Cancelado), com histórico. Transição inválida é recusada pela API e também pelo banco.
+- **Catálogo por programas de cuidado.** 81 medicamentos de uso contínuo (72 disponíveis ao paciente), organizados em hipertensão, diabetes, colesterol, tireoide, estômago, vitaminas e minerais, coração e circulação e outros cuidados, com busca e filtro na hora de montar a Box.
+- **Pagamento simulado.** Ao confirmar, o estoque já fica reservado e o pedido aguarda o pagamento por alguns minutos, com contagem regressiva. Pagar leva o pedido à separação (ou à análise da receita); se o prazo vence, o pedido é cancelado e a reserva volta ao estoque. Os preços são fictícios e nenhuma cobrança real nem dado de pagamento existe. Na demonstração, dois botões ("Aprovar pagamento" e "Simular expiração") representam o retorno do meio de pagamento. Detalhes em `docs/CONTRATO_API.md`.
+- **Máquina de estados do pedido** (Aguardando pagamento, Pendente, Em separação, Aguardando entregador, Em rota, Entregue; Recusado e Cancelado), com histórico. Transição inválida é recusada pela API e também pelo banco.
 - **Previsão de reposição** por média móvel de 3 meses e **relatórios CSV** (estoque, lotes a vencer e entregas).
-- **Acessibilidade:** tema claro (padrão), escuro e de alto contraste; tradução para Libras (VLibras); varredura automática WCAG 2.1 A/AA sem violações nas 15 telas.
+- **Acessibilidade:** tema claro (padrão), escuro e de alto contraste; tradução para Libras (VLibras); opção "Reduzir movimentos" (as animações viram apenas um esmaecer); varredura automática WCAG 2.1 A/AA sem violações nas telas verificadas.
+- **Página institucional** em `/site`, com menu, telas do sistema e passo a passo; a página inicial (`/`) continua sendo a de demonstração. A abertura animada de 5 segundos aparece uma vez por sessão e tem botão "Pular".
 
 ## Telas
+### Página institucional
+![Página institucional](docs/prints/01-site-institucional.jpg)
+
 ### Paciente
 | Início | Montar Box | Meus pedidos |
 |---|---|---|
@@ -59,7 +65,7 @@ Regras principais:
 ### Operador e entregador
 | Separação com etiquetas | Entregador no celular |
 |---|---|
-| ![Separação](docs/prints/30-operador-separacao.png) | <img src="docs/prints/40-entregador-celular.png" width="260" alt="Entregador no celular"> |
+| ![Separação](docs/prints/30-operador-separacao.jpg) | <img src="docs/prints/40-entregador-celular.jpg" width="260" alt="Entregador no celular"> |
 
 ### App Android (entregador)
 <img src="docs/prints/50-app-android-lista.png" width="240" alt="Lista de Boxes no app"> <img src="docs/prints/51-app-android-entrega.png" width="240" alt="Entrega confirmada no app">
@@ -154,10 +160,10 @@ Pela linha de comando: `cd mobile && ./gradlew assembleDebug` (APK em `app/build
 
 ## Testes
 ```bash
-cd backend && dotnet test                      # 47 testes, sem MySQL
+cd backend && dotnet test                      # 54 testes, sem MySQL
 export MEDFLOW_TESTE_MYSQL="server=localhost;port=3307;user=root;password=troque-esta-senha"
-dotnet test                                    # 48 testes (inclui a prova de concorrência em MySQL real)
-cd ../frontend && npm test                     # 26 testes
+dotnet test                                    # 55 testes (inclui a prova de concorrência em MySQL real)
+cd ../frontend && npm test                     # 28 testes
 python scripts/e2e_api.py                      # roteiro ponta a ponta contra a API (banco recém-criado)
 cd ../mobile && ./gradlew testDebugUnitTest    # 15 testes de unidade do app
 ```
