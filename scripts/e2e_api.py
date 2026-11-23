@@ -1,19 +1,21 @@
 """Roteiro ponta a ponta contra a API real (http://localhost:5080): paciente -> separação -> entrega.
 Uso: python scripts/e2e_api.py   (API em Development, banco recém-criado com os dados de demonstração)
 A senha das contas de demonstração é lida de DadosIniciais.cs e nunca é impressa."""
-import json, re, sys, urllib.request, urllib.error, io, os
+import json, re, sys, urllib.request, urllib.error, io, os, ssl
 
 BASE = os.environ.get("MEDFLOW_API", "http://localhost:5080")
 FONTE = os.path.join(os.path.dirname(__file__), "..", "backend", "src", "MedFlow.Infrastructure", "Persistencia", "DadosIniciais.cs")
 SENHA = re.search(r'SenhaDemonstracao = "([^"]+)"', io.open(FONTE, encoding="utf-8-sig").read()).group(1)
 falhas = []
+# Só para certificado local do Caddy (DOMINIO=localhost): MEDFLOW_INSEGURO=1 ignora a verificação do certificado.
+CTX = ssl._create_unverified_context() if os.environ.get("MEDFLOW_INSEGURO") else None
 
 def chamar(metodo, caminho, corpo=None, token=None):
     dados = json.dumps(corpo).encode() if corpo is not None else None
     req = urllib.request.Request(BASE + caminho, data=dados, method=metodo, headers={"Content-Type": "application/json"})
     if token: req.add_header("Authorization", "Bearer " + token)
     try:
-        with urllib.request.urlopen(req) as r:
+        with urllib.request.urlopen(req, context=CTX) as r:
             txt = r.read().decode("utf-8-sig")
             return r.status, (json.loads(txt) if txt and r.headers.get_content_type() == "application/json" else txt)
     except urllib.error.HTTPError as e:
