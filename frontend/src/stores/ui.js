@@ -4,7 +4,7 @@ import { mensagemErro } from '../utils/formato.js'
 const lerPrefs = () => { try { return JSON.parse(localStorage.getItem('medflow-prefs') || '{}') } catch { return {} } }
 
 export const useUiStore = defineStore('ui', {
-  state: () => ({ toasts: [], prefs: { tema: 'sistema', fonte: 'normal', contraste: false, ...lerPrefs() }, seq: 0 }),
+  state: () => ({ toasts: [], prefs: { tema: 'light', fonte: 'normal', contraste: false, ...lerPrefs() }, seq: 0 }),
   actions: {
     avisar(texto, tipo = '') {
       const id = ++this.seq

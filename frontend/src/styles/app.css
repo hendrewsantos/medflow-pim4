@@ -4,11 +4,11 @@
 
 :root {
   /* Cor — neutros com leve viés azul-esverdeado, vindos da marca (azul-marinho + verde-água) */
-  --bg: #f2f5f7;
+  --bg: #f7f9fb;
   --surface: #ffffff;
-  --surface-2: #e9eff2;
-  --line: #d3dde2;
-  --line-strong: #b6c4cc;
+  --surface-2: #eef3f6;
+  --line: #e2e9ed;
+  --line-strong: #c3d0d7;
   --ink: #0e1f33;
   --ink-2: #455867;
   --ink-3: #66798a;
@@ -17,10 +17,10 @@
   --brand-ink: #ffffff;
   --brand-soft: #dbf0ec;
   --pulse: #12a865;
-  --side: #0b1f4b;
-  --side-2: #142c63;
-  --side-ink: #ffffff;
-  --side-ink-2: #a9bbdd;
+  --side: #eef6f6;
+  --side-2: #d7e9ea;
+  --side-ink: #0e1f33;
+  --side-ink-2: #455867;
   --ok: #13703f;
   --ok-soft: #dcf2e4;
   --warn: #8a5300;
@@ -343,8 +343,8 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: var(--t-md); }
 .kpi .valor small { font-size: var(--t-md); color: var(--ink-3); font-weight: 500; margin-left: 2px; }
 .kpi .rotulo-kpi { font-size: var(--t-sm); color: var(--ink-2); font-weight: 700; }
 .kpi .meta { font-size: var(--t-xs); color: var(--ink-3); }
-.kpi.alerta { border-color: var(--warn); }
-.kpi.critico { border-color: var(--bad); }
+.kpi.alerta .valor { color: var(--warn); }
+.kpi.critico .valor { color: var(--bad); }
 
 /* Fluxo da operação: barra proporcional por etapa */
 .fluxo { display: flex; flex-direction: column; gap: 10px; }
@@ -513,3 +513,30 @@ pre.json { background: var(--surface-2); border: 1px solid var(--line); border-r
 .entrega .acoes-entrega .btn { text-decoration: none; }
 .renov-dias { font-size: var(--t-lg); }
 .renov-dias strong { font-family: var(--f-display); font-size: var(--t-2xl); }
+
+
+/* ── Layout limpo: menu horizontal no topo (substitui o menu lateral) ── */
+.shell { display: block; min-height: 100%; }
+.side, .nav-mobile, .topo { display: none; }
+.barra {
+  position: sticky; top: 0; z-index: 10; background: var(--surface); border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 24px; min-height: 60px;
+  padding-inline: max(24px, env(safe-area-inset-left, 0px)) max(24px, env(safe-area-inset-right, 0px));
+}
+.barra .marca { padding: 0; color: var(--ink); }
+.barra .marca .nome small { color: var(--ink-3); }
+.barra .nav { flex-direction: row; gap: 2px; overflow-x: auto; flex: 1; scrollbar-width: none; }
+.barra .nav a { width: auto; white-space: nowrap; color: var(--ink-2); padding: 8px 12px; border-radius: 8px; }
+.barra .nav a:hover { background: var(--surface-2); color: var(--ink); }
+.barra .nav [aria-current="page"] { background: var(--brand-soft); color: var(--brand); box-shadow: none; font-weight: 700; }
+.barra .nav .badge { background: transparent; border: 1px solid var(--brand); color: var(--brand); }
+.barra .acoes { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+.barra .quem { display: flex; align-items: center; gap: 10px; font-size: var(--t-sm); color: var(--ink-2); }
+.barra .quem strong { color: var(--ink); }
+.barra .quem button { background: none; border: 1px solid var(--line-strong); color: var(--ink); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.conteudo { margin-inline: auto; }
+@media (max-width: 980px) {
+  .barra { flex-wrap: wrap; gap: 8px 16px; padding-block: 8px; padding-inline: max(16px, env(safe-area-inset-left, 0px)); }
+  .barra .nav { order: 3; flex-basis: 100%; }
+  .barra .quem span { display: none; }
+}
