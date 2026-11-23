@@ -196,8 +196,6 @@ Tecnologias: ASP.NET Core 8, EF Core 8 (Pomelo), MySQL 8.4, JWT, Vue 3, Kotlin, 
 ## Documentação
 - Contrato da API: [`docs/CONTRATO_API.md`](docs/CONTRATO_API.md)
 - Auditoria e resultados reais: [`docs/AUDITORIA.md`](docs/AUDITORIA.md)
-- Diferenças entre o texto do trabalho e o sistema: [`docs/DIVERGENCIAS_DOCUMENTO.md`](docs/DIVERGENCIAS_DOCUMENTO.md)
-- Roteiro e registro de decisões: [`ROADMAP.md`](ROADMAP.md)
 
 ## Equipe
 Grupo do PIM IV, UNIP, curso de Análise e Desenvolvimento de Sistemas (São Paulo, 2026). Orientador: Prof. André Gomes de Lira Muniz.
