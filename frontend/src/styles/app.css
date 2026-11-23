@@ -653,3 +653,17 @@ body { background: transparent; }
 .acesso { position: relative; overflow: hidden; min-height: 100dvh; }
 .acesso .lado-marca { background: transparent; position: static; overflow: visible; }
 .acesso .lado-form { position: relative; z-index: 1; }
+
+/* Fita de sachês (início do paciente): um sachê por horário, com serrilha no topo e a próxima dose em destaque */
+.fita { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+.sache { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 22px 14px 12px; background: var(--surface); border: 1px solid var(--line-strong); border-bottom: 3px double var(--line-strong); border-radius: 4px 4px 14px 14px; }
+.sache::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 9px; background-image: radial-gradient(circle at 6px 0, var(--bg-serrilha, #d5e6f5) 4.5px, transparent 5px); background-size: 12px 9px; }
+.sache-topo { display: flex; justify-content: space-between; gap: 8px; font-size: var(--t-xs); color: var(--ink-2); font-weight: 700; text-transform: capitalize; }
+.sache .hora { font-family: var(--f-mono); font-size: 1.7rem; font-weight: 600; color: var(--brand); line-height: 1.1; }
+.sache ul { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; font-size: var(--t-sm); }
+.sache li .dose { color: var(--ink-3); white-space: nowrap; }
+.sache-rodape { margin-top: auto; padding-top: 8px; border-top: 1px dashed var(--line-strong); display: flex; justify-content: space-between; gap: 8px; font-size: var(--t-xs); color: var(--ink-2); }
+.sache-prox { color: var(--brand); }
+.sache.proxima { border-color: var(--brand); border-bottom-color: var(--brand); }
+.sache.proxima .sache-topo { color: var(--brand); }
+:root[data-theme="dark"] .sache { --bg-serrilha: #0e2330; }
