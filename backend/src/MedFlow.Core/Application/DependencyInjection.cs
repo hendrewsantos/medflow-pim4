@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<ReceitaService>();
         services.AddScoped<CatalogoService>();
         services.AddScoped<PedidoService>();
+        services.AddScoped<AssinaturaService>();
         services.AddScoped<EntregaService>();
         services.AddScoped<PainelService>();
         services.AddScoped<ReposicaoService>();

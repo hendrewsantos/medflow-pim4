@@ -21,6 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddSingleton(builder.Configuration.GetSection("Pagamento").Get<MedFlow.Application.Servicos.PagamentoOpcoes>() ?? new MedFlow.Application.Servicos.PagamentoOpcoes());
 builder.Services.AddHostedService<MedFlow.Api.Pagamento.ExpiracaoDePagamentos>();
+builder.Services.AddHostedService<MedFlow.Api.Pagamento.RenovacaoAutomatica>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddControllers()

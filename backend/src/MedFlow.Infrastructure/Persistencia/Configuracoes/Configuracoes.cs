@@ -188,3 +188,13 @@ internal sealed class MovimentacaoConfig : IEntityTypeConfiguration<Movimentacao
         b.HasIndex(x => x.Em);
     }
 }
+
+internal sealed class AssinaturaConfig : IEntityTypeConfiguration<Assinatura>
+{
+    public void Configure(EntityTypeBuilder<Assinatura> b)
+    {
+        b.ToTable("assinaturas");
+        b.HasOne(x => x.Paciente).WithMany().HasForeignKey(x => x.PacienteId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.PacienteId).IsUnique();
+    }
+}

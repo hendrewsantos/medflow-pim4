@@ -18,6 +18,7 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     public DbSet<Tratamento> Tratamentos => Set<Tratamento>();
     public DbSet<Pedido> Pedidos => Set<Pedido>();
     public DbSet<Entrega> Entregas => Set<Entrega>();
+    public DbSet<Assinatura> Assinaturas => Set<Assinatura>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

@@ -48,6 +48,40 @@ namespace MedFlow.Infrastructure.Migrations
                     b.ToTable("alocacoes_lote", (string)null);
                 });
 
+            modelBuilder.Entity("MedFlow.Domain.Entidades.Assinatura", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativa")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("AtivadaEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("CanceladaEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("DiasAntecedencia")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PacienteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UltimaRenovacaoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PacienteId")
+                        .IsUnique();
+
+                    b.ToTable("assinaturas", (string)null);
+                });
+
             modelBuilder.Entity("MedFlow.Domain.Entidades.Consentimento", b =>
                 {
                     b.Property<int>("Id")
@@ -610,6 +644,17 @@ namespace MedFlow.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Lote");
+                });
+
+            modelBuilder.Entity("MedFlow.Domain.Entidades.Assinatura", b =>
+                {
+                    b.HasOne("MedFlow.Domain.Entidades.Usuario", "Paciente")
+                        .WithMany()
+                        .HasForeignKey("PacienteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Paciente");
                 });
 
             modelBuilder.Entity("MedFlow.Domain.Entidades.Consentimento", b =>
