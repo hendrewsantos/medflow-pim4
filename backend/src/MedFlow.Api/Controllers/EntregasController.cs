@@ -14,22 +14,22 @@ public sealed class EntregasController : BaseController
     public EntregasController(EntregaService entregas) => _entregas = entregas;
 
     [HttpGet("disponiveis")]
-    public async Task<ActionResult<IReadOnlyList<PedidoDto>>> Disponiveis(CancellationToken ct) => Ok(await _entregas.ListarDisponiveisAsync(Logado, ct));
+    public async Task<ActionResult<IReadOnlyList<EntregaResumoDto>>> Disponiveis(CancellationToken ct) => Ok(await _entregas.ListarDisponiveisAsync(Logado, ct));
 
     [HttpGet("minhas")]
-    public async Task<ActionResult<IReadOnlyList<PedidoDto>>> Minhas(CancellationToken ct) => Ok(await _entregas.ListarMinhasAsync(Logado, ct));
+    public async Task<ActionResult<IReadOnlyList<EntregaResumoDto>>> Minhas(CancellationToken ct) => Ok(await _entregas.ListarMinhasAsync(Logado, ct));
 
     /// <summary>UC10 — inicia a rota.</summary>
     [HttpPost("{pedidoId:int}/iniciar")]
-    public async Task<ActionResult<PedidoDto>> Iniciar(int pedidoId, CancellationToken ct) => Ok(await _entregas.IniciarRotaAsync(Logado, pedidoId, ct));
+    public async Task<ActionResult<EntregaResumoDto>> Iniciar(int pedidoId, CancellationToken ct) => Ok(await _entregas.IniciarRotaAsync(Logado, pedidoId, ct));
 
     /// <summary>UC11 — confirma a entrega com o nome de quem recebeu.</summary>
     [HttpPost("{pedidoId:int}/confirmar")]
-    public async Task<ActionResult<PedidoDto>> Confirmar(int pedidoId, ConfirmarEntregaRequest request, CancellationToken ct) =>
+    public async Task<ActionResult<EntregaResumoDto>> Confirmar(int pedidoId, ConfirmarEntregaRequest request, CancellationToken ct) =>
         Ok(await _entregas.ConfirmarAsync(Logado, pedidoId, request, ct));
 
     /// <summary>UC11 (alternativo) — ocorrência: o pedido volta para a fila de entrega.</summary>
     [HttpPost("{pedidoId:int}/ocorrencia")]
-    public async Task<ActionResult<PedidoDto>> Ocorrencia(int pedidoId, OcorrenciaRequest request, CancellationToken ct) =>
+    public async Task<ActionResult<EntregaResumoDto>> Ocorrencia(int pedidoId, OcorrenciaRequest request, CancellationToken ct) =>
         Ok(await _entregas.RegistrarOcorrenciaAsync(Logado, pedidoId, request, ct));
 }

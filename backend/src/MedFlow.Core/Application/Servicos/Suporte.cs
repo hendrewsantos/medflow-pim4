@@ -43,14 +43,18 @@ internal static class Mapeamentos
 
     public static ReceitaDto ParaDto(this Receita r, string? paciente = null) =>
         new(r.Id, r.PacienteId, paciente ?? r.Paciente?.Nome, r.NomeOriginal, r.TipoConteudo, r.TamanhoBytes,
-            r.EnviadaEm, r.Status, r.ValidaAte, r.MotivoRecusa, r.AnalisadaEm);
+            r.EnviadaEm, r.Status, r.ValidaAte, r.MotivoRecusa, r.AnalisadaEm, r.PrescritorNome, r.PrescritorCrm, r.DataEmissao);
 
     public static MedicamentoDto ParaDto(this Medicamento m, DateTime hoje, DateTime validoAte) =>
         new(m.Id, m.Nome, m.PrincipioAtivo, m.Concentracao, m.FormaFarmaceutica, m.Tarja, m.ControleEspecial, m.NivelMinimo,
             m.QuantidadeFisica, m.QuantidadeReservada, m.DisponivelAte(validoAte), m.AbaixoDoMinimo(hoje),
             m.Lotes.OrderBy(l => l.Validade)
                 .Select(l => new LoteDto(l.Id, l.Numero, l.Fabricacao, l.Validade, l.QuantidadeFisica, l.QuantidadeReservada, l.Disponivel, l.Vencido(hoje)))
-                .ToList());
+                .ToList(), m.Categoria, m.Termolabil);
+
+    public static EntregaResumoDto ParaEntregaResumo(this Pedido p) =>
+        new(p.Id, $"BOX-{p.Id:D6}", p.Paciente?.Nome ?? "—", p.EnderecoEntrega, p.Paciente?.Telefone,
+            p.Tratamento?.Saches.Count ?? 0, p.Status, p.Entregas.Count);
 
     public static PedidoResumoDto ParaResumo(this Pedido p) =>
         new(p.Id, p.Paciente?.Nome ?? "—", p.Status, p.CriadoEm, p.AtualizadoEm, p.Itens.Count);

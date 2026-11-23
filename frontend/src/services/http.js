@@ -1,5 +1,6 @@
 // Cliente da API REST (ASP.NET Core). O token JWT vai no cabeçalho Authorization — nunca um "X-User-Id".
 import axios from 'axios'
+import { salvarBlob } from '../utils/arquivo.js'
 
 const CHAVE_SESSAO = 'medflow.sessao'
 
@@ -9,7 +10,10 @@ export const sessao = {
   limpar() { try { sessionStorage.removeItem(CHAVE_SESSAO) } catch { /* ignorado */ } },
 }
 
-const cliente = axios.create({ baseURL: import.meta.env.VITE_API_URL || 'https://localhost:7205/api' })
+// VITE_API_URL é a raiz da API (padrão http://localhost:5080); as rotas ficam sob /api. Aceita também o valor terminado em /api.
+export const URL_API = String(import.meta.env.VITE_API_URL || 'http://localhost:5080').replace(/\/+$/, '').replace(/\/api$/, '')
+
+const cliente = axios.create({ baseURL: `${URL_API}/api` })
 
 cliente.interceptors.request.use((config) => {
   const s = sessao.ler()
@@ -37,6 +41,7 @@ const put = (url, corpo) => cliente.put(url, corpo).then((r) => r.data)
 
 export const api = {
   auth: {
+    alterarSenha: (senhaAtual, novaSenha) => post('/auth/alterar-senha', { senhaAtual, novaSenha }).then(() => undefined),
     login: (email, senha) => post('/auth/login', { email, senha }),
     cadastrar: (d) => post('/auth/cadastro', d),
     eu: () => get('/auth/eu'),
@@ -51,7 +56,8 @@ export const api = {
     },
     minhas: () => get('/receitas/minhas'),
     pendentes: () => get('/receitas/pendentes'),
-    aprovar: (id, validaAte) => post(`/receitas/${id}/aprovar`, { validaAte }),
+    /** dados: { validaAte, prescritorNome, prescritorCrm, dataEmissao, checklistCompleto, itensConferidos: [ids de medicamento] } */
+    aprovar: (id, dados) => post(`/receitas/${id}/aprovar`, dados),
     recusar: (id, motivo) => post(`/receitas/${id}/recusar`, { motivo }),
     arquivoUrl: async (id) => URL.createObjectURL(await get(`/receitas/${id}/arquivo`, { responseType: 'blob' })),
   },
@@ -68,6 +74,7 @@ export const api = {
     meus: () => get('/pedidos/meus'),
     operacional: (status) => get('/pedidos', { params: status ? { status } : {} }),
     obter: (id) => get(`/pedidos/${id}`),
+    proximaRenovacao: () => get('/pedidos/proxima-renovacao'),
     cancelar: (id) => post(`/pedidos/${id}/cancelar`),
     finalizarBox: (id) => post(`/pedidos/${id}/finalizar-box`),
   },
@@ -79,6 +86,22 @@ export const api = {
     ocorrencia: (id, motivo) => post(`/entregas/${id}/ocorrencia`, { motivo }),
   },
   painel: { obter: () => get('/painel') },
+  previsaoReposicao: { listar: () => get('/previsao-reposicao') },
+  relatorios: {
+    /** Baixa o CSV com o token no cabeçalho Authorization (um link simples não enviaria o token) e salva o arquivo. */
+    baixar: async (nome) => {
+      const s = sessao.ler()
+      let resp
+      try {
+        resp = await fetch(`${URL_API}/api/relatorios/${nome}.csv`, { headers: s?.token ? { Authorization: `Bearer ${s.token}` } : {} })
+      } catch {
+        throw { status: 0, title: 'Falha de comunicação', detail: 'Não foi possível falar com o servidor. Verifique sua conexão.' }
+      }
+      if (resp.status === 401) { sessao.limpar(); window.dispatchEvent(new CustomEvent('medflow:sessao-expirada')) }
+      if (!resp.ok) throw { status: resp.status, title: 'Falha ao gerar o relatório', detail: resp.status === 403 ? 'Você não tem permissão para este relatório.' : 'Não foi possível gerar o relatório.' }
+      salvarBlob(await resp.blob(), `${nome}.csv`)
+    },
+  },
   usuarios: {
     listar: () => get('/usuarios'),
     criar: (d) => post('/usuarios', d),
@@ -87,13 +110,10 @@ export const api = {
   privacidade: {
     meusDados: () => get('/privacidade/meus-dados'),
     atualizar: (d) => put('/privacidade/meus-dados', d),
+    revogarSaude: () => post('/privacidade/revogar', { tipo: 'DadosDeSaude' }),
     excluirConta: () => cliente.delete('/privacidade/minha-conta').then(() => undefined),
     exportarArquivo: async () => {
-      const blob = await get('/privacidade/meus-dados/exportar', { responseType: 'blob' })
-      const url = URL.createObjectURL(blob)
-      const a = Object.assign(document.createElement('a'), { href: url, download: 'meus-dados-medflow.json' })
-      a.click()
-      URL.revokeObjectURL(url)
+      salvarBlob(await get('/privacidade/meus-dados/exportar', { responseType: 'blob' }), 'meus-dados-medflow.json')
     },
   },
 }

@@ -9,6 +9,8 @@ using MedFlow.Infrastructure;
 using MedFlow.Infrastructure.Persistencia;
 using MedFlow.Infrastructure.Seguranca;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -69,6 +71,14 @@ builder.Services.AddRateLimiter(o =>
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
 
+builder.Services.AddHealthChecks().AddCheck<MedFlow.Api.Saude.BancoHealthCheck>("banco", tags: new[] { "ready" });
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.KnownNetworks.Clear();
+    o.KnownProxies.Clear();
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -88,7 +98,18 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseExceptionHandler();
+
+// RNF04 — cabeçalhos de segurança e resposta sem cache para dados autenticados.
+app.Use(async (contexto, proximo) =>
+{
+    contexto.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    contexto.Response.Headers["Referrer-Policy"] = "no-referrer";
+    contexto.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+    if (contexto.Request.Path.StartsWithSegments("/api")) contexto.Response.Headers["Cache-Control"] = "no-store";
+    await proximo();
+});
 
 if (app.Environment.IsDevelopment())
 {
@@ -114,6 +135,8 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
+app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = c => c.Tags.Contains("ready") });
 
 app.Run();
 

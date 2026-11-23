@@ -3,8 +3,10 @@
 // Nada aqui sai do navegador: ao recarregar a página, os dados voltam ao estado inicial.
 
 import * as R from '../../domain/regras.js'
+import { salvarBlob } from '../../utils/arquivo.js'
 
 const PERFIS_EQUIPE = ['Administrador', 'Funcionario']
+const CATEGORIAS = ['Comum', 'ControleEspecial', 'Antimicrobiano', 'RetencaoDeReceita']
 const ITERACOES_DEMO = 1000 // a API real usa 600.000 (OWASP); aqui é menor só para a demonstração carregar rápido
 
 async function gerarHash(senha) {
@@ -27,6 +29,7 @@ async function derivar(senha, salt, iteracoes) {
 const b64 = (bytes) => btoa(String.fromCharCode(...bytes))
 const deB64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0))
 const iso = (d) => new Date(d).toISOString()
+const ymd = (d) => { const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}` }
 
 export function criarServidor({ relogio } = {}) {
   let agoraFixo = null
@@ -65,10 +68,13 @@ export function criarServidor({ relogio } = {}) {
       return u
     },
 
-    criarMedicamento({ nome, principioAtivo, concentracao, formaFarmaceutica, tarja, controleEspecial = false, nivelMinimo }) {
+    criarMedicamento({ nome, principioAtivo, concentracao, formaFarmaceutica, tarja, controleEspecial = false, nivelMinimo, categoria, termolabil = false }) {
       if (!nome?.trim()) throw R.erros.regra('Informe o nome do medicamento.')
       if (!(nivelMinimo >= 0)) throw R.erros.regra('O nível mínimo não pode ser negativo.')
-      const m = { id: novoId('medicamento'), nome: nome.trim(), principioAtivo, concentracao, formaFarmaceutica, tarja, controleEspecial, nivelMinimo: Number(nivelMinimo), ativo: true, lotes: [] }
+      categoria ||= controleEspecial ? 'ControleEspecial' : 'Comum'
+      if (!CATEGORIAS.includes(categoria)) throw R.erros.regra('Categoria regulatória inválida.')
+      const m = { id: novoId('medicamento'), nome: nome.trim(), principioAtivo, concentracao, formaFarmaceutica, tarja, controleEspecial: controleEspecial || categoria === 'ControleEspecial',
+        categoria, termolabil: !!termolabil, nivelMinimo: Number(nivelMinimo), ativo: true, lotes: [] }
       estado.medicamentos.push(m)
       return m
     },
@@ -88,20 +94,36 @@ export function criarServidor({ relogio } = {}) {
       return m
     },
 
+    saudeRevogada(u) {
+      return u.consentimentos.some((c) => c.tipo === 'DadosDeSaude' && c.revogadoEm) && !u.consentimentos.some((c) => c.tipo === 'DadosDeSaude' && !c.revogadoEm)
+    },
+
     registrarReceita(pacienteId, { nomeOriginal, tipoConteudo, tamanhoBytes, previewUrl = null, exemplo = null }) {
       const p = usuario(pacienteId)
+      if (ops.saudeRevogada(p)) throw R.erros.regra('Você revogou o consentimento para dados de saúde. Para enviar uma nova receita, dê o consentimento novamente.')
       if (!p.consentimentos.some((c) => c.tipo === 'DadosDeSaude' && !c.revogadoEm))
         p.consentimentos.push({ tipo: 'DadosDeSaude', versaoTermo: '2026.1', concedidoEm: iso(agora()), revogadoEm: null })
       const r = { id: novoId('receita'), pacienteId, caminhoArquivo: `${crypto.randomUUID().replaceAll('-', '')}${nomeOriginal.slice(nomeOriginal.lastIndexOf('.'))}`,
-        nomeOriginal, tipoConteudo, tamanhoBytes, enviadaEm: iso(agora()), status: 'Pendente', analisadaPorId: null, analisadaEm: null, validaAte: null, motivoRecusa: null, previewUrl, exemplo }
+        nomeOriginal, tipoConteudo, tamanhoBytes, enviadaEm: iso(agora()), status: 'Pendente', analisadaPorId: null, analisadaEm: null, validaAte: null, motivoRecusa: null, prescritorNome: null, prescritorCrm: null, dataEmissao: null, previewUrl, exemplo }
       estado.receitas.push(r)
       return r
     },
 
-    aprovarReceita(receitaId, validaAte, farmaceuticoId) {
+    /** conferencia (opcional): { prescritorNome, prescritorCrm, dataEmissao, checklistCompleto, itensConferidos } (RF07). Sem ela (carga inicial), vale o receituário de exemplo. */
+    aprovarReceita(receitaId, validaAte, farmaceuticoId, conferencia = null) {
       const r = receitaOu404(receitaId)
       if (r.status !== 'Pendente') throw new R.ErroApi(409, 'Transição de status não permitida', `Esta receita já foi analisada (status atual: ${r.status}).`)
       if (!validaAte || R.inicioDoDia(validaAte) < R.inicioDoDia(agora())) throw R.erros.regra('A validade da receita não pode ser anterior à data da análise.')
+      if (conferencia) {
+        if (!conferencia.checklistCompleto) throw R.erros.regra('Conclua o checklist da receita antes de aprovar.')
+        if (!conferencia.prescritorNome?.trim()) throw R.erros.regra('Informe o nome do prescritor.')
+        if (!conferencia.prescritorCrm?.trim()) throw R.erros.regra('Informe o CRM do prescritor (número/UF).')
+        if (!conferencia.dataEmissao || R.inicioDoDia(conferencia.dataEmissao) > R.inicioDoDia(agora())) throw R.erros.regra('Informe a data de emissão (não pode ser futura).')
+        const conferidos = new Set((conferencia.itensConferidos || []).map(Number))
+        const faltam = estado.pedidos.filter((x) => x.receitaId === r.id && x.status === 'Pendente').flatMap((x) => x.itens).filter((i) => !conferidos.has(i.medicamentoId))
+        if (faltam.length) throw R.erros.regra(`Confira todos os itens do pedido ligados à receita (faltam: ${faltam.map((i) => medicamento(i.medicamentoId).nome).join(', ')}).`)
+        Object.assign(r, { prescritorNome: conferencia.prescritorNome.trim(), prescritorCrm: conferencia.prescritorCrm.trim(), dataEmissao: iso(R.inicioDoDia(conferencia.dataEmissao)) })
+      } else if (r.exemplo) Object.assign(r, { prescritorNome: r.exemplo.medico, prescritorCrm: r.exemplo.crm, dataEmissao: r.enviadaEm })
       Object.assign(r, { status: 'Aprovada', validaAte: iso(R.inicioDoDia(validaAte)), analisadaPorId: farmaceuticoId, analisadaEm: iso(agora()) })
       for (const p of estado.pedidos.filter((x) => x.receitaId === r.id && x.status === 'Pendente'))
         R.mudarStatus(p, 'EmSeparacao', farmaceuticoId, agora(), 'Receita aprovada pelo farmacêutico.')
@@ -124,6 +146,7 @@ export function criarServidor({ relogio } = {}) {
     /** RN03 — a reserva acontece na confirmação. Tudo é calculado antes de alterar qualquer saldo. */
     confirmarPedido(pacienteId, { receitaId, itens, enderecoEntrega }) {
       const receita = receitaOu404(receitaId)
+      if (ops.saudeRevogada(usuario(pacienteId))) throw R.erros.regra('Você revogou o consentimento para dados de saúde; não é possível criar novos pedidos.')
       if (receita.pacienteId !== pacienteId) throw R.erros.acessoNegado('Esta receita pertence a outro paciente.')
       const usavel = receita.status === 'Pendente' || (receita.status === 'Aprovada' && R.inicioDoDia(receita.validaAte) >= R.inicioDoDia(agora()))
       if (!usavel) throw R.erros.regra('A receita informada foi recusada ou está vencida. Envie uma nova receita (RN02).')
@@ -209,15 +232,19 @@ export function criarServidor({ relogio } = {}) {
     usuario: (u) => ({ id: u.id, nome: u.nome, email: u.email, cpfMascarado: R.mascararCpf(u.cpf), perfil: u.perfil, ativo: u.ativo }),
     receita: (r) => ({ id: r.id, pacienteId: r.pacienteId, paciente: usuario(r.pacienteId)?.nome, nomeOriginal: r.nomeOriginal, tipoConteudo: r.tipoConteudo,
       tamanhoBytes: r.tamanhoBytes, enviadaEm: r.enviadaEm, status: r.status, validaAte: r.validaAte, motivoRecusa: r.motivoRecusa, analisadaEm: r.analisadaEm,
+      prescritorNome: r.prescritorNome ?? null, prescritorCrm: r.prescritorCrm ?? null, dataEmissao: r.dataEmissao ?? null,
       previewUrl: r.previewUrl, exemplo: r.exemplo }),
     medicamento(m) {
       const hoje = agora()
       return { id: m.id, nome: m.nome, principioAtivo: m.principioAtivo, concentracao: m.concentracao, formaFarmaceutica: m.formaFarmaceutica, tarja: m.tarja,
-        controleEspecial: m.controleEspecial, nivelMinimo: m.nivelMinimo, quantidadeFisica: R.fisicoTotal(m), quantidadeReservada: R.reservadoTotal(m),
+        controleEspecial: m.controleEspecial, categoria: m.categoria ?? (m.controleEspecial ? 'ControleEspecial' : 'Comum'), termolabil: !!m.termolabil, nivelMinimo: m.nivelMinimo, quantidadeFisica: R.fisicoTotal(m), quantidadeReservada: R.reservadoTotal(m),
         disponivelParaCiclo: R.disponivelAte(m, R.somarDias(R.inicioDoDia(hoje), R.DIAS_CICLO)), abaixoDoMinimo: R.abaixoDoMinimo(m, hoje),
         lotes: [...m.lotes].sort((a, b) => new Date(a.validade) - new Date(b.validade)).map((l) => ({ id: l.id, numero: l.numero, fabricacao: l.fabricacao, validade: l.validade,
           quantidadeFisica: l.quantidadeFisica, quantidadeReservada: l.quantidadeReservada, disponivel: R.disponivelDoLote(l), vencido: R.loteVencido(l, hoje) })) }
     },
+    /** EntregaResumoDto (RN13): o entregador não recebe medicamentos, lotes nem receita. */
+    entregaResumo: (p) => ({ pedidoId: p.id, codigo: `BOX-${String(p.id).padStart(6, '0')}`, paciente: usuario(p.pacienteId)?.nome ?? '—', endereco: p.enderecoEntrega,
+      telefone: usuario(p.pacienteId)?.telefone ?? '', totalSaches: tratamento(p.tratamentoId)?.saches.length ?? 0, status: p.status, tentativa: p.entregas.length }),
     pedidoResumo: (p) => ({ id: p.id, paciente: usuario(p.pacienteId)?.nome ?? '—', status: p.status, criadoEm: p.criadoEm, atualizadoEm: p.atualizadoEm, totalItens: p.itens.length }),
     pedido(p) {
       const saches = tratamento(p.tratamentoId)?.saches ?? []
@@ -232,6 +259,36 @@ export function criarServidor({ relogio } = {}) {
         historico: p.historico.map(({ de, para, em, observacao }) => ({ de, para, em, observacao })),
         entregas: copia(p.entregas) }
     },
+  }
+
+  function calcularPrevisao() {
+    const hoje = agora()
+    const desde = R.somarDias(hoje, -90)
+    return estado.medicamentos.filter((m) => m.ativo).map((m) => {
+      const ids = new Set(m.lotes.map((l) => l.id))
+      const baixas = estado.movimentacoes.filter((x) => x.tipo === 'Baixa' && ids.has(x.loteId) && new Date(x.em) >= desde).reduce((s, x) => s + x.quantidade, 0)
+      const consumoMedioMensal = Math.round((baixas / 3) * 10) / 10
+      const disponivel = R.disponivelAte(m, hoje)
+      const diasAteMinimo = consumoMedioMensal > 0 ? Math.max(0, Math.floor((disponivel - m.nivelMinimo) / (consumoMedioMensal / 30))) : null
+      return { medicamentoId: m.id, nome: `${m.nome} ${m.concentracao}`, consumoMedioMensal, disponivel, nivelMinimo: m.nivelMinimo, diasAteMinimo }
+    }).sort((a, b) => (a.diasAteMinimo ?? Infinity) - (b.diasAteMinimo ?? Infinity))
+  }
+
+  function gerarCsv(nome) {
+    const hoje = agora()
+    const linha = (c) => c.map((v) => `"${String(v ?? '').replaceAll('"', '""')}"`).join(';')
+    let cab, linhas
+    if (nome === 'estoque') {
+      cab = ['Medicamento', 'Categoria', 'Termolábil', 'Físico', 'Reservado', 'Nível mínimo']
+      linhas = estado.medicamentos.filter((m) => m.ativo).map((m) => [`${m.nome} ${m.concentracao}`, m.categoria ?? 'Comum', m.termolabil ? 'Sim' : 'Não', R.fisicoTotal(m), R.reservadoTotal(m), m.nivelMinimo])
+    } else if (nome === 'lotes-a-vencer') {
+      cab = ['Medicamento', 'Lote', 'Validade', 'Quantidade física']
+      linhas = estado.medicamentos.flatMap((m) => m.lotes.filter((l) => l.quantidadeFisica > 0 && (R.loteVencido(l, hoje) || R.loteVenceEmAte(l, hoje, R.DIAS_ALERTA_VALIDADE))).map((l) => [m.nome, l.numero, ymd(l.validade), l.quantidadeFisica]))
+    } else if (nome === 'entregas') {
+      cab = ['Pedido', 'Código', 'Status', 'Tentativas', 'Atualizado em']
+      linhas = estado.pedidos.map((p) => [p.id, `BOX-${String(p.id).padStart(6, '0')}`, p.status, p.entregas.length, p.atualizadoEm])
+    } else throw R.erros.naoEncontrado('Relatório')
+    return `\uFEFF${[linha(cab), ...linhas.map(linha)].join('\r\n')}\r\n`
   }
 
   // ── Sessão e permissões (equivalente ao [Authorize(Policy = ...)] dos controllers) ──
@@ -280,6 +337,12 @@ export function criarServidor({ relogio } = {}) {
         return login(d.email, d.senha)
       }),
       eu: resposta(async () => dto.usuario(exigir())),
+      alterarSenha: async (senhaAtual, novaSenha) => {
+        const u = exigir()
+        if (!(await verificarHash(String(senhaAtual || ''), u.senhaHash))) throw R.erros.regra('A senha atual não confere.')
+        R.validar([[R.senhaForte(novaSenha), 'novaSenha', 'A nova senha deve ter ao menos 8 caracteres, com letras e números.']])
+        u.senhaHash = await gerarHash(novaSenha)
+      },
       sair: async () => { sessao = null },
     },
 
@@ -308,9 +371,10 @@ export function criarServidor({ relogio } = {}) {
         exigir('Administrador')
         return estado.receitas.filter((r) => r.status === 'Pendente').sort((a, b) => a.enviadaEm.localeCompare(b.enviadaEm)).map(dto.receita)
       }),
-      aprovar: resposta(async (id, validaAte) => {
+      aprovar: resposta(async (id, dados) => {
         const u = exigir('Administrador')
-        return dto.receita(ops.aprovarReceita(id, validaAte, u.id))
+        const legado = typeof dados === 'string'
+        return dto.receita(ops.aprovarReceita(id, legado ? dados : dados?.validaAte, u.id, legado ? null : dados))
       }),
       recusar: resposta(async (id, motivo) => {
         const u = exigir('Administrador')
@@ -322,7 +386,7 @@ export function criarServidor({ relogio } = {}) {
       listar: resposta(async () => {
         const u = exigir()
         const equipe = PERFIS_EQUIPE.includes(u.perfil)
-        return estado.medicamentos.filter((m) => m.ativo && (equipe || !m.controleEspecial)).sort((a, b) => a.nome.localeCompare(b.nome)).map(dto.medicamento)
+        return estado.medicamentos.filter((m) => m.ativo && (equipe || (!m.controleEspecial && (m.categoria ?? 'Comum') === 'Comum' && !m.termolabil))).sort((a, b) => a.nome.localeCompare(b.nome)).map(dto.medicamento)
       }),
       criar: resposta(async (d) => {
         exigir(...PERFIS_EQUIPE)
@@ -383,10 +447,21 @@ export function criarServidor({ relogio } = {}) {
       obter: resposta(async (id) => {
         const u = exigir()
         const p = pedidoOu404(id)
-        const podeVer = PERFIS_EQUIPE.includes(u.perfil) || p.pacienteId === u.id ||
-          (u.perfil === 'Entregador' && (p.status === 'AguardandoEntregador' || p.entregas.some((e) => e.entregadorId === u.id)))
+        const podeVer = PERFIS_EQUIPE.includes(u.perfil) || p.pacienteId === u.id // Entregador: 403 (usa /entregas)
         if (!podeVer) throw R.erros.acessoNegado()
         return dto.pedido(p)
+      }),
+      /** RF19 — quando a Box atual acaba e se a receita vence antes disso. */
+      proximaRenovacao: resposta(async () => {
+        const u = exigir('Paciente')
+        const ultimo = estado.pedidos.filter((p) => p.pacienteId === u.id && p.status === 'Entregue').sort((a, b) => b.atualizadoEm.localeCompare(a.atualizadoEm))[0]
+        const entregueEm = ultimo?.entregas.findLast((e) => e.resultado === 'Entregue')?.concluidaEm
+        if (!entregueEm) return { temBox: false, dataEstimadaFimDaBox: null, diasRestantes: null, receitaValidaAte: null, receitaVenceAntes: false }
+        const fim = R.somarDias(R.inicioDoDia(entregueEm), R.DIAS_CICLO)
+        const validas = estado.receitas.filter((r) => r.pacienteId === u.id && r.status === 'Aprovada' && r.validaAte).sort((a, b) => b.validaAte.localeCompare(a.validaAte))
+        const validaAte = validas[0]?.validaAte ?? null
+        return { temBox: true, dataEstimadaFimDaBox: ymd(fim), diasRestantes: Math.ceil((fim - R.inicioDoDia(agora())) / 86_400_000),
+          receitaValidaAte: validaAte ? ymd(validaAte) : null, receitaVenceAntes: !!validaAte && R.inicioDoDia(validaAte) < fim }
       }),
       cancelar: resposta(async (id) => dto.pedido(ops.cancelarPedido(id, exigir('Paciente').id))),
       finalizarBox: resposta(async (id) => dto.pedido(ops.finalizarBox(id, exigir(...PERFIS_EQUIPE).id))),
@@ -395,15 +470,15 @@ export function criarServidor({ relogio } = {}) {
     entregas: {
       disponiveis: resposta(async () => {
         exigir('Entregador')
-        return estado.pedidos.filter((p) => p.status === 'AguardandoEntregador').sort((a, b) => a.atualizadoEm.localeCompare(b.atualizadoEm)).map(dto.pedido)
+        return estado.pedidos.filter((p) => p.status === 'AguardandoEntregador').sort((a, b) => a.atualizadoEm.localeCompare(b.atualizadoEm)).map(dto.entregaResumo)
       }),
       minhas: resposta(async () => {
         const u = exigir('Entregador')
-        return estado.pedidos.filter((p) => p.entregas.some((e) => e.entregadorId === u.id)).sort((a, b) => b.atualizadoEm.localeCompare(a.atualizadoEm)).slice(0, 50).map(dto.pedido)
+        return estado.pedidos.filter((p) => p.entregas.some((e) => e.entregadorId === u.id)).sort((a, b) => b.atualizadoEm.localeCompare(a.atualizadoEm)).slice(0, 50).map(dto.entregaResumo)
       }),
-      iniciar: resposta(async (id) => dto.pedido(ops.iniciarRota(id, exigir('Entregador').id))),
-      confirmar: resposta(async (id, recebedor) => dto.pedido(ops.confirmarEntrega(id, exigir('Entregador').id, recebedor))),
-      ocorrencia: resposta(async (id, motivo) => dto.pedido(ops.registrarOcorrencia(id, exigir('Entregador').id, motivo))),
+      iniciar: resposta(async (id) => dto.entregaResumo(ops.iniciarRota(id, exigir('Entregador').id))),
+      confirmar: resposta(async (id, recebedor) => dto.entregaResumo(ops.confirmarEntrega(id, exigir('Entregador').id, recebedor))),
+      ocorrencia: resposta(async (id, motivo) => dto.entregaResumo(ops.registrarOcorrencia(id, exigir('Entregador').id, motivo))),
     },
 
     painel: {
@@ -474,6 +549,11 @@ export function criarServidor({ relogio } = {}) {
         Object.assign(u, { nome: d.nome.trim(), email, endereco: d.endereco?.trim() || null, telefone: d.telefone?.trim() || null })
         return api.privacidade.meusDados()
       }),
+      revogarSaude: resposta(async () => {
+        const u = exigir('Paciente')
+        for (const c of u.consentimentos.filter((x) => x.tipo === 'DadosDeSaude')) c.revogadoEm ||= iso(agora())
+        return api.privacidade.meusDados()
+      }),
       excluirConta: async () => {
         const u = exigir('Paciente')
         if (estado.pedidos.some((p) => p.pacienteId === u.id && ['EmSeparacao', 'AguardandoEntregador', 'EmRota'].includes(p.status)))
@@ -484,6 +564,24 @@ export function criarServidor({ relogio } = {}) {
           senhaHash: '', ativo: false, anonimizadoEm: iso(agora()) })
         for (const c of u.consentimentos) c.revogadoEm ||= iso(agora())
         sessao = null
+      },
+    },
+
+    /** RF20 — média móvel de 3 meses das baixas e dias até o saldo chegar ao nível mínimo. */
+    previsaoReposicao: {
+      listar: resposta(async () => {
+        exigir(...PERFIS_EQUIPE)
+        return calcularPrevisao()
+      }),
+    },
+
+    /** RF23 — CSV com BOM e separador ';' (sem CPF nem endereço). baixar() também salva o arquivo quando há navegador. */
+    relatorios: {
+      baixar: async (nome) => {
+        exigir(...PERFIS_EQUIPE)
+        const csv = gerarCsv(nome)
+        if (typeof document !== 'undefined') salvarBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${nome}.csv`)
+        return csv
       },
     },
 

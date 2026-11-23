@@ -27,6 +27,10 @@ public sealed class PrivacidadeController : BaseController
     public async Task<ActionResult<MeusDadosDto>> Atualizar(AtualizarMeusDadosRequest request, CancellationToken ct) =>
         Ok(await _privacidade.AtualizarAsync(Logado, request, ct));
 
+    [HttpPost("revogar")]
+    public async Task<ActionResult<MeusDadosDto>> Revogar(RevogarConsentimentoRequest request, CancellationToken ct) =>
+        Ok(await _privacidade.RevogarAsync(Logado, request, ct));
+
     [HttpDelete("minha-conta")]
     public async Task<IActionResult> Excluir(CancellationToken ct)
     {

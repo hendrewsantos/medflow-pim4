@@ -20,16 +20,20 @@ public sealed record MeusDadosDto(
 
 // ── Receitas ──
 public sealed record ReceitaDto(int Id, int PacienteId, string? Paciente, string NomeOriginal, string TipoConteudo, long TamanhoBytes,
-    DateTime EnviadaEm, StatusReceita Status, DateTime? ValidaAte, string? MotivoRecusa, DateTime? AnalisadaEm);
-public sealed record AprovarReceitaRequest(DateTime ValidaAte);
+    DateTime EnviadaEm, StatusReceita Status, DateTime? ValidaAte, string? MotivoRecusa, DateTime? AnalisadaEm,
+    string? PrescritorNome = null, string? PrescritorCrm = null, DateTime? DataEmissao = null);
+/// <summary>RF07: ItensConferidos = ids de medicamento marcados "Confere"; todos os itens dos pedidos ligados à receita precisam estar conferidos.</summary>
+public sealed record AprovarReceitaRequest(DateTime ValidaAte, string? PrescritorNome = null, string? PrescritorCrm = null, DateTime? DataEmissao = null,
+    bool ChecklistCompleto = false, IReadOnlyList<int>? ItensConferidos = null);
 public sealed record RecusarReceitaRequest(string Motivo);
 
 // ── Catálogo e estoque ──
-public sealed record MedicamentoRequest(string Nome, string PrincipioAtivo, string Concentracao, string FormaFarmaceutica, Tarja Tarja, bool ControleEspecial, int NivelMinimo);
+public sealed record MedicamentoRequest(string Nome, string PrincipioAtivo, string Concentracao, string FormaFarmaceutica, Tarja Tarja, bool ControleEspecial, int NivelMinimo,
+    CategoriaRegulatoria Categoria = CategoriaRegulatoria.Comum, bool Termolabil = false);
 public sealed record LoteDto(int Id, string Numero, DateTime Fabricacao, DateTime Validade, int QuantidadeFisica, int QuantidadeReservada, int Disponivel, bool Vencido);
 public sealed record MedicamentoDto(int Id, string Nome, string PrincipioAtivo, string Concentracao, string FormaFarmaceutica, Tarja Tarja,
     bool ControleEspecial, int NivelMinimo, int QuantidadeFisica, int QuantidadeReservada, int DisponivelParaCiclo, bool AbaixoDoMinimo,
-    IReadOnlyList<LoteDto> Lotes);
+    IReadOnlyList<LoteDto> Lotes, CategoriaRegulatoria Categoria = CategoriaRegulatoria.Comum, bool Termolabil = false);
 public sealed record EntradaLoteRequest(string Numero, DateTime Fabricacao, DateTime Validade, int Quantidade);
 public sealed record MovimentacaoDto(int Id, string Medicamento, string Lote, TipoMovimentacao Tipo, int Quantidade, int? PedidoId, DateTime Em, string Observacao);
 public sealed record AlertaDto(string Tipo, string Medicamento, string Mensagem, string Severidade);
@@ -46,8 +50,16 @@ public sealed record EntregaDto(int Tentativa, int EntregadorId, DateTime Inicia
 public sealed record PedidoResumoDto(int Id, string Paciente, StatusPedido Status, DateTime CriadoEm, DateTime AtualizadoEm, int TotalItens);
 public sealed record PedidoDto(int Id, int PacienteId, string Paciente, int ReceitaId, StatusPedido Status, string EnderecoEntrega, int DiasCiclo,
     DateTime CriadoEm, DateTime AtualizadoEm, IReadOnlyList<PedidoItemDto> Itens, IReadOnlyList<HistoricoDto> Historico, IReadOnlyList<EntregaDto> Entregas);
+/// <summary>RN13 — o entregador recebe apenas o necessário para entregar (sem medicamentos, lotes ou receita).</summary>
+public sealed record EntregaResumoDto(int PedidoId, string Codigo, string Paciente, string Endereco, string? Telefone, int TotalSaches, StatusPedido Status, int Tentativa);
 public sealed record ConfirmarEntregaRequest(string Recebedor);
 public sealed record OcorrenciaRequest(string Motivo);
+
+// ── Conta, privacidade, renovação e previsão ──
+public sealed record AlterarSenhaRequest(string SenhaAtual, string NovaSenha);
+public sealed record RevogarConsentimentoRequest(TipoConsentimento Tipo);
+public sealed record ProximaRenovacaoDto(bool TemBox, DateTime? DataEstimadaFimDaBox, int? DiasRestantes, DateTime? ReceitaValidaAte, bool ReceitaVenceAntes);
+public sealed record PrevisaoReposicaoDto(int MedicamentoId, string Nome, double ConsumoMedioMensal, int Disponivel, int NivelMinimo, int? DiasAteMinimo);
 
 // ── Painel ──
 public sealed record IndicadoresDto(

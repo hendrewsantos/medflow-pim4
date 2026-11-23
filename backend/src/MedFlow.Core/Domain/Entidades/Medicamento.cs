@@ -10,7 +10,8 @@ public sealed class Medicamento : Entidade
     private Medicamento() { }
 
     public Medicamento(string nome, string principioAtivo, string concentracao, string formaFarmaceutica,
-        Tarja tarja, bool controleEspecial, int nivelMinimo)
+        Tarja tarja, bool controleEspecial, int nivelMinimo,
+        CategoriaRegulatoria categoria = CategoriaRegulatoria.Comum, bool termolabil = false)
     {
         if (string.IsNullOrWhiteSpace(nome)) throw new DomainException("Informe o nome do medicamento.");
         if (nivelMinimo < 0) throw new DomainException("O nível mínimo não pode ser negativo.");
@@ -20,6 +21,8 @@ public sealed class Medicamento : Entidade
         FormaFarmaceutica = formaFarmaceutica.Trim();
         Tarja = tarja;
         ControleEspecial = controleEspecial;
+        Categoria = controleEspecial ? CategoriaRegulatoria.ControleEspecial : categoria;
+        Termolabil = termolabil;
         NivelMinimo = nivelMinimo;
         Ativo = true;
     }
@@ -31,9 +34,16 @@ public sealed class Medicamento : Entidade
     public Tarja Tarja { get; private set; }
     /// <summary>Substâncias da Portaria SVS/MS nº 344/1998 — não entram na Box fracionada (RN09).</summary>
     public bool ControleEspecial { get; private set; }
+    /// <summary>Categoria regulatória (RN09): define se o item pode entrar na Box.</summary>
+    public CategoriaRegulatoria Categoria { get; private set; }
+    /// <summary>Termolábeis exigem embalagem e transporte especiais e ficam fora da Box.</summary>
+    public bool Termolabil { get; private set; }
     public int NivelMinimo { get; private set; }
     public bool Ativo { get; private set; }
     public IReadOnlyCollection<Lote> Lotes => _lotes;
+
+    /// <summary>RN09 — somente categoria Comum, não termolábil e sem controle especial.</summary>
+    public bool PermitidoNaBox => Categoria == CategoriaRegulatoria.Comum && !Termolabil && !ControleEspecial;
 
     public int QuantidadeFisica => _lotes.Sum(l => l.QuantidadeFisica);
     public int QuantidadeReservada => _lotes.Sum(l => l.QuantidadeReservada);
@@ -44,8 +54,11 @@ public sealed class Medicamento : Entidade
     /// <summary>RN10 — alerta quando o disponível em lotes não vencidos fica igual ou abaixo do mínimo.</summary>
     public bool AbaixoDoMinimo(DateTime hoje) => DisponivelAte(hoje) <= NivelMinimo;
 
-    public void Atualizar(string nome, string principioAtivo, string concentracao, string formaFarmaceutica, Tarja tarja, bool controleEspecial, int nivelMinimo)
+    public void Atualizar(string nome, string principioAtivo, string concentracao, string formaFarmaceutica, Tarja tarja, bool controleEspecial, int nivelMinimo,
+        CategoriaRegulatoria categoria = CategoriaRegulatoria.Comum, bool termolabil = false)
     {
+        Categoria = controleEspecial ? CategoriaRegulatoria.ControleEspecial : categoria;
+        Termolabil = termolabil;
         if (string.IsNullOrWhiteSpace(nome)) throw new DomainException("Informe o nome do medicamento.");
         if (nivelMinimo < 0) throw new DomainException("O nível mínimo não pode ser negativo.");
         Nome = nome.Trim();

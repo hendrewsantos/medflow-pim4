@@ -64,6 +64,12 @@ public sealed class Usuario : Entidade
         _consentimentos.Add(new Consentimento(tipo, versaoTermo, agora));
     }
 
+    /// <summary>LGPD art. 8º, §5º e art. 18, IX — o titular pode revogar o consentimento a qualquer momento.</summary>
+    public void RevogarConsentimento(TipoConsentimento tipo, DateTime agora)
+    {
+        foreach (var c in _consentimentos.Where(x => x.Tipo == tipo && x.RevogadoEm is null)) c.Revogar(agora);
+    }
+
     public bool PossuiConsentimento(TipoConsentimento tipo) => _consentimentos.Any(c => c.Tipo == tipo && c.RevogadoEm is null);
 
     public void AtualizarDados(string nome, string email, string? endereco, string? telefone)

@@ -30,14 +30,22 @@ public sealed class Receita : Entidade
     public DateTime? AnalisadaEm { get; private set; }
     public DateTime? ValidaAte { get; private set; }
     public string? MotivoRecusa { get; private set; }
+    /// <summary>RF07 — dados do prescritor, registrados pelo farmacêutico na análise.</summary>
+    public string? PrescritorNome { get; private set; }
+    public string? PrescritorCrm { get; private set; }
+    public DateTime? DataEmissao { get; private set; }
 
     /// <summary>RN02 — a receita pode sustentar um pedido se estiver pendente de análise ou aprovada e dentro da validade.</summary>
     public bool PodeSerUsadaEm(DateTime agora) =>
         Status == StatusReceita.Pendente || (Status == StatusReceita.Aprovada && ValidaAte.HasValue && ValidaAte.Value.Date >= agora.Date);
 
-    public void Aprovar(int farmaceuticoId, DateTime validaAte, DateTime agora)
+    public void Aprovar(int farmaceuticoId, DateTime validaAte, DateTime agora,
+        string? prescritorNome = null, string? prescritorCrm = null, DateTime? dataEmissao = null)
     {
         GarantirPendente();
+        PrescritorNome = prescritorNome?.Trim();
+        PrescritorCrm = prescritorCrm?.Trim();
+        DataEmissao = dataEmissao?.Date;
         if (validaAte.Date < agora.Date) throw new DomainException("A validade da receita não pode ser anterior à data da análise.");
         Status = StatusReceita.Aprovada;
         ValidaAte = validaAte.Date;

@@ -115,7 +115,7 @@ public class ReceitaEPedidoTests
         Assert.Equal(StatusPedido.Pendente, pedido.Status);
         Assert.Equal(60, (await amb.Db.Lotes.SingleAsync(l => l.MedicamentoId == losartana.Id)).QuantidadeReservada);
 
-        await amb.Receitas().AprovarAsync(Ambiente.Logado(juliana), receita.Id, new AprovarReceitaRequest(amb.Relogio.Agora.AddMonths(3)));
+        await amb.Receitas().AprovarAsync(Ambiente.Logado(juliana), receita.Id, new AprovarReceitaRequest(amb.Relogio.Agora.AddMonths(3), "Dra. Ana Souza", "123456/SP", amb.Relogio.Agora.AddDays(-3), true, new[] { losartana.Id }));
         var aposAprovacao = await amb.Pedidos().ObterAsync(paciente, pedido.Id);
         Assert.Equal(StatusPedido.EmSeparacao, aposAprovacao.Status);
     }

@@ -66,7 +66,81 @@ test('CT17/CT22/CT25/CT28/CT29 — renovação do Carlos: reserva, separação d
   await assert.rejects(() => s.api.entregas.confirmar(pedido.id, ''), status(422))
   const entregue = await s.api.entregas.confirmar(pedido.id, 'Carlos Mendes')
   assert.equal(entregue.status, 'Entregue')
-  assert.deepEqual(entregue.historico.map((h) => h.para), ['Pendente', 'EmSeparacao', 'AguardandoEntregador', 'EmRota', 'Entregue'])
+  assert.equal(entregue.codigo, `BOX-${String(pedido.id).padStart(6, '0')}`)
+  await entrarComo(s, 'bruno@medflow.com.br')
+  const completo = await s.api.pedidos.obter(pedido.id)
+  assert.deepEqual(completo.historico.map((h) => h.para), ['Pendente', 'EmSeparacao', 'AguardandoEntregador', 'EmRota', 'Entregue'])
+})
+
+test('RN13 — entregador recebe só EntregaResumoDto (sem medicamentos, lotes nem receita) e 403 em /pedidos/{id}', async () => {
+  const s = await criarDemonstracao()
+  await entrarComo(s, 'rafael@medflow.com.br')
+  const lista = [...(await s.api.entregas.disponiveis()), ...(await s.api.entregas.minhas())]
+  assert.ok(lista.length >= 2)
+  const chaves = ['codigo', 'endereco', 'paciente', 'pedidoId', 'status', 'telefone', 'tentativa', 'totalSaches']
+  for (const e of lista) {
+    assert.deepEqual(Object.keys(e).sort(), chaves)
+    assert.ok(e.totalSaches > 0 && e.telefone)
+  }
+  await assert.rejects(() => s.api.pedidos.obter(lista[0].pedidoId), status(403))
+})
+
+test('RF07 — aprovar exige checklist, CRM e todos os itens do pedido conferidos', async () => {
+  const s = await criarDemonstracao()
+  await entrarComo(s, 'juliana@medflow.com.br')
+  const daMaria = (await s.api.receitas.pendentes()).find((r) => r.paciente.startsWith('Maria'))
+  const itens = s.estado.pedidos.find((p) => p.receitaId === daMaria.id).itens.map((i) => i.medicamentoId)
+  const base = { validaAte: '2099-01-01', prescritorNome: 'Dr. Paulo Arantes', prescritorCrm: '96115/SP', dataEmissao: '2026-01-10', checklistCompleto: true, itensConferidos: itens }
+  await assert.rejects(() => s.api.receitas.aprovar(daMaria.id, { ...base, checklistCompleto: false }), status(422))
+  await assert.rejects(() => s.api.receitas.aprovar(daMaria.id, { ...base, prescritorCrm: ' ' }), status(422))
+  await assert.rejects(() => s.api.receitas.aprovar(daMaria.id, { ...base, itensConferidos: itens.slice(1) }), status(422))
+  const r = await s.api.receitas.aprovar(daMaria.id, base)
+  assert.equal(r.status, 'Aprovada')
+  assert.equal(r.prescritorCrm, '96115/SP')
+  assert.equal(s.estado.pedidos.find((p) => p.receitaId === daMaria.id).status, 'EmSeparacao')
+})
+
+test('Catálogo — categoria e termolábil; paciente só vê Comum não termolábil', async () => {
+  const s = await criarDemonstracao()
+  await entrarComo(s, 'bruno@medflow.com.br')
+  const equipe = await s.api.medicamentos.listar()
+  assert.equal(equipe.find((m) => m.nome === 'Amoxicilina').categoria, 'Antimicrobiano')
+  assert.equal(equipe.find((m) => m.nome === 'Insulina NPH').termolabil, true)
+  assert.equal(equipe.find((m) => m.nome === 'Clonazepam').categoria, 'ControleEspecial')
+  await entrarComo(s, 'carlos@email.com')
+  const paciente = await s.api.medicamentos.listar()
+  assert.ok(paciente.length > 0 && paciente.every((m) => m.categoria === 'Comum' && !m.termolabil))
+})
+
+test('Conta — alterar senha, revogar saúde (bloqueia receita e pedido) e próxima renovação', async () => {
+  const s = await criarDemonstracao()
+  await entrarComo(s, 'carlos@email.com')
+  await assert.rejects(() => s.api.auth.alterarSenha('errada', 'NovaSenha1'), status(422))
+  await assert.rejects(() => s.api.auth.alterarSenha(SENHA_DEMO, 'fraca'), status(400))
+  await s.api.auth.alterarSenha(SENHA_DEMO, 'NovaSenha1')
+  await s.api.auth.login('carlos@email.com', 'NovaSenha1')
+  const renov = await s.api.pedidos.proximaRenovacao()
+  assert.equal(renov.temBox, true)
+  assert.ok(renov.diasRestantes >= 0 && renov.diasRestantes <= 5, `dias restantes: ${renov.diasRestantes}`)
+  assert.equal(renov.receitaVenceAntes, false)
+  const dados = await s.api.privacidade.revogarSaude()
+  assert.ok(dados.consentimentos.some((c) => c.tipo === 'DadosDeSaude' && c.revogadoEm))
+  await assert.rejects(() => s.api.receitas.enviar(pdf, true), status(422))
+})
+
+test('RF20/RF23 — previsão de reposição e CSV com BOM e separador ponto e vírgula, sem CPF', async () => {
+  const s = await criarDemonstracao()
+  await entrarComo(s, 'bruno@medflow.com.br')
+  const prev = await s.api.previsaoReposicao.listar()
+  assert.ok(prev.length > 5 && prev.every((p) => 'consumoMedioMensal' in p && 'diasAteMinimo' in p))
+  assert.ok(prev.some((p) => p.consumoMedioMensal > 0) && prev.some((p) => p.diasAteMinimo === null))
+  for (const nome of ['estoque', 'lotes-a-vencer', 'entregas']) {
+    const csv = await s.api.relatorios.baixar(nome)
+    assert.ok(csv.startsWith('\uFEFF') && csv.includes(';'))
+    assert.ok(!/\d{3}\.\d{3}\.\d{3}-\d{2}|Rua |Av\. /.test(csv))
+  }
+  await entrarComo(s, 'carlos@email.com')
+  await assert.rejects(() => s.api.relatorios.baixar('estoque'), status(403))
 })
 
 test('CT18 — Atenolol 2x ao dia (60 un.) com 40 em estoque: 409 e nada reservado', async () => {

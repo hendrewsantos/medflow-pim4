@@ -35,6 +35,16 @@ public sealed class PrivacidadeService
             pedidos.Select(p => p.ParaResumo()).ToList());
     }
 
+    /// <summary>RF21 / art. 18, IX — revoga o consentimento. Sem consentimento de saúde ativo, novos pedidos são recusados.</summary>
+    public async Task<MeusDadosDto> RevogarAsync(UsuarioLogado u, RevogarConsentimentoRequest r, CancellationToken ct = default)
+    {
+        var usuario = await _db.Usuarios.Include(x => x.Consentimentos).FirstOrDefaultAsync(x => x.Id == u.Id && x.Ativo, ct)
+            ?? throw new NaoEncontradoException("Usuário");
+        usuario.RevogarConsentimento(r.Tipo, _relogio.Agora);
+        await _db.SaveChangesAsync(ct);
+        return await ObterAsync(u, ct);
+    }
+
     /// <summary>Art. 18, III — correção de dados incompletos, inexatos ou desatualizados.</summary>
     public async Task<MeusDadosDto> AtualizarAsync(UsuarioLogado u, AtualizarMeusDadosRequest r, CancellationToken ct = default)
     {

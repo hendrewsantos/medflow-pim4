@@ -31,8 +31,8 @@ public sealed class Tratamento : Entidade
     public void AdicionarSache(Medicamento medicamento, string horario, int quantidade)
     {
         if (!medicamento.Ativo) throw new DomainException($"{medicamento.Nome} não está disponível no catálogo.");
-        if (medicamento.ControleEspecial)
-            throw new DomainException($"{medicamento.Nome} é de controle especial (Portaria SVS/MS 344/1998) e não pode ser fracionado na Box.");
+        if (!medicamento.PermitidoNaBox)
+            throw new DomainException($"{medicamento.Nome} não pode ser fracionado na Box: categoria regulatória {medicamento.Categoria}{(medicamento.Termolabil ? " / termolábil" : "")} (RN09; Portaria SVS/MS 344/1998 e RDC 80/2006).");
         if (quantidade < 1 || quantidade > MaxUnidadesPorDose)
             throw new DomainException($"A quantidade por dose deve ficar entre 1 e {MaxUnidadesPorDose} unidades.");
         if (!TimeOnly.TryParseExact(horario, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var hora))

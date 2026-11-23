@@ -28,6 +28,18 @@ public enum TipoMovimentacao { Entrada = 1, Reserva = 2, LiberacaoReserva = 3, B
 
 public enum Tarja { Livre = 0, Vermelha = 1, Preta = 2 }
 
+/// <summary>RN09 — só medicamento de categoria Comum (e não termolábil) entra na Box fracionada.</summary>
+public enum CategoriaRegulatoria
+{
+    Comum = 0,
+    /// <summary>Portaria SVS/MS 344/1998.</summary>
+    ControleEspecial = 1,
+    /// <summary>Receita com prazo curto e retenção (RDC 471/2021).</summary>
+    Antimicrobiano = 2,
+    /// <summary>Demais medicamentos de receita retida.</summary>
+    RetencaoDeReceita = 3
+}
+
 public enum TipoConsentimento
 {
     /// <summary>Dados pessoais comuns — LGPD art. 7º, I.</summary>

@@ -26,7 +26,7 @@ public sealed class CatalogoService
     {
         var hoje = _relogio.Agora.Date;
         var query = _db.Medicamentos.Include(m => m.Lotes).Where(m => m.Ativo);
-        if (!u.EhEquipe) query = query.Where(m => !m.ControleEspecial);
+        if (!u.EhEquipe) query = query.Where(m => m.Categoria == CategoriaRegulatoria.Comum && !m.Termolabil && !m.ControleEspecial);
         var medicamentos = await query.OrderBy(m => m.Nome).ToListAsync(ct);
         return medicamentos.Select(m => m.ParaDto(hoje, hoje.AddDays(Pedido.DiasCicloPadrao))).ToList();
     }
@@ -36,7 +36,7 @@ public sealed class CatalogoService
         GarantirEquipe(u);
         if (await _db.Medicamentos.AnyAsync(m => m.Nome == r.Nome.Trim() && m.Concentracao == r.Concentracao.Trim(), ct))
             throw new ConflitoException("Este medicamento já está cadastrado.");
-        var medicamento = new Medicamento(r.Nome, r.PrincipioAtivo, r.Concentracao, r.FormaFarmaceutica, r.Tarja, r.ControleEspecial, r.NivelMinimo);
+        var medicamento = new Medicamento(r.Nome, r.PrincipioAtivo, r.Concentracao, r.FormaFarmaceutica, r.Tarja, r.ControleEspecial, r.NivelMinimo, r.Categoria, r.Termolabil);
         _db.Medicamentos.Add(medicamento);
         await _db.SaveChangesAsync(ct);
         var hoje = _relogio.Agora.Date;
@@ -47,7 +47,7 @@ public sealed class CatalogoService
     {
         GarantirEquipe(u);
         var medicamento = await _db.Medicamentos.Include(m => m.Lotes).FirstOrDefaultAsync(m => m.Id == id, ct) ?? throw new NaoEncontradoException("Medicamento");
-        medicamento.Atualizar(r.Nome, r.PrincipioAtivo, r.Concentracao, r.FormaFarmaceutica, r.Tarja, r.ControleEspecial, r.NivelMinimo);
+        medicamento.Atualizar(r.Nome, r.PrincipioAtivo, r.Concentracao, r.FormaFarmaceutica, r.Tarja, r.ControleEspecial, r.NivelMinimo, r.Categoria, r.Termolabil);
         await _db.SaveChangesAsync(ct);
         var hoje = _relogio.Agora.Date;
         return medicamento.ParaDto(hoje, hoje.AddDays(Pedido.DiasCicloPadrao));

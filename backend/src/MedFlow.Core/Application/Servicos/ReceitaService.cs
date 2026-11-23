@@ -1,6 +1,7 @@
 using MedFlow.Application.Abstracoes;
 using MedFlow.Application.Dtos;
 using MedFlow.Application.Excecoes;
+using MedFlow.Domain.Comum;
 using MedFlow.Domain.Entidades;
 using MedFlow.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -85,9 +86,25 @@ public sealed class ReceitaService
         GarantirFarmaceutico(u);
         var agora = _relogio.Agora;
         var receita = await _db.Receitas.Include(x => x.Paciente).FirstOrDefaultAsync(x => x.Id == id, ct) ?? throw new NaoEncontradoException("Receita");
-        receita.Aprovar(u.Id, r.ValidaAte, agora);
 
-        var pedidos = await _db.Pedidos.Where(p => p.ReceitaId == id && p.Status == StatusPedido.Pendente).Include(p => p.Historico).ToListAsync(ct);
+        var pedidos = await _db.Pedidos.Where(p => p.ReceitaId == id && p.Status == StatusPedido.Pendente)
+            .Include(p => p.Historico).Include(p => p.Itens).ToListAsync(ct);
+
+        // RF07: sem checklist completo, prescritor, CRM e conferência item a item a aprovação é recusada (422).
+        if (!r.ChecklistCompleto)
+            throw new DomainException("Complete o checklist de conferência da receita (paciente, prescritor, data, posologia, legibilidade e assinatura).");
+        if (string.IsNullOrWhiteSpace(r.PrescritorNome) || r.PrescritorNome.Trim().Length < 3)
+            throw new DomainException("Informe o nome do prescritor.");
+        if (string.IsNullOrWhiteSpace(r.PrescritorCrm) || r.PrescritorCrm.Trim().Length < 4)
+            throw new DomainException("Informe o CRM e a UF do prescritor.");
+        if (r.DataEmissao is null || r.DataEmissao.Value.Date > agora.Date)
+            throw new DomainException("Informe a data de emissão da receita (não pode ser futura).");
+        var conferidos = r.ItensConferidos ?? Array.Empty<int>();
+        var faltam = pedidos.SelectMany(p => p.Itens).Select(i => i.MedicamentoId).Distinct().Where(m => !conferidos.Contains(m)).ToList();
+        if (faltam.Count > 0)
+            throw new DomainException("Confira cada item do pedido com a receita antes de aprovar; item divergente exige recusa com motivo.");
+
+        receita.Aprovar(u.Id, r.ValidaAte, agora, r.PrescritorNome, r.PrescritorCrm, r.DataEmissao);
         foreach (var pedido in pedidos) pedido.IniciarSeparacao(u.Id, agora);
 
         await _db.SalvarAsync(ct);

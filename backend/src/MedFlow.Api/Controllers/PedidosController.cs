@@ -25,6 +25,10 @@ public sealed class PedidosController : BaseController
     public async Task<ActionResult<PedidoDto>> Confirmar(ConfirmarPedidoRequest request, CancellationToken ct) =>
         StatusCode(StatusCodes.Status201Created, await _pedidos.ConfirmarAsync(Logado, request, ct));
 
+    [HttpGet("proxima-renovacao")]
+    [Authorize(Policy = Politicas.Paciente)]
+    public async Task<ActionResult<ProximaRenovacaoDto>> ProximaRenovacao(CancellationToken ct) => Ok(await _pedidos.ProximaRenovacaoAsync(Logado, ct));
+
     [HttpGet("meus")]
     [Authorize(Policy = Politicas.Paciente)]
     public async Task<ActionResult<IReadOnlyList<PedidoResumoDto>>> Meus(CancellationToken ct) => Ok(await _pedidos.ListarMeusAsync(Logado, ct));

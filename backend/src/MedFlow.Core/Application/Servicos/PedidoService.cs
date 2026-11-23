@@ -49,6 +49,10 @@ public sealed class PedidoService
 
         var receita = await _db.Receitas.FirstOrDefaultAsync(x => x.Id == r.ReceitaId, ct) ?? throw new NaoEncontradoException("Receita");
         if (receita.PacienteId != u.Id) throw new AcessoNegadoException("Esta receita pertence a outro paciente.");
+        var titular = await _db.Usuarios.Include(x => x.Consentimentos).FirstAsync(x => x.Id == u.Id, ct);
+        if (!titular.PossuiConsentimento(TipoConsentimento.DadosDeSaude))
+            throw new DomainException("O consentimento para dados de saúde foi revogado. Envie uma nova receita, consentindo novamente, para fazer novos pedidos (LGPD art. 11, I).");
+
         if (!receita.PodeSerUsadaEm(agora)) throw new DomainException("A receita informada foi recusada ou está vencida. Envie uma nova receita (RN02).");
 
         if (await _db.Pedidos.AnyAsync(p => p.PacienteId == u.Id && (p.Status == StatusPedido.Pendente || p.Status == StatusPedido.EmSeparacao), ct))
@@ -89,11 +93,26 @@ public sealed class PedidoService
     public async Task<PedidoDto> ObterAsync(UsuarioLogado u, int id, CancellationToken ct = default)
     {
         var pedido = await _db.PedidosCompletos().FirstOrDefaultAsync(p => p.Id == id, ct) ?? throw new NaoEncontradoException("Pedido");
-        var podeVer = u.EhEquipe
-            || pedido.PacienteId == u.Id
-            || (u.Perfil == PerfilUsuario.Entregador && (pedido.Status == StatusPedido.AguardandoEntregador || pedido.Entregas.Any(e => e.EntregadorId == u.Id)));
+        // RN13: o entregador não acessa o detalhe do pedido (medicamentos, lotes); usa as rotas /api/entregas.
+        var podeVer = u.EhEquipe || pedido.PacienteId == u.Id;
         if (!podeVer) throw new AcessoNegadoException();
         return pedido.ParaDto();
+    }
+
+    /// <summary>RF19 — quando a Box acaba e se a receita vence antes do fim do ciclo.</summary>
+    public async Task<ProximaRenovacaoDto> ProximaRenovacaoAsync(UsuarioLogado u, CancellationToken ct = default)
+    {
+        if (u.Perfil != PerfilUsuario.Paciente) throw new AcessoNegadoException();
+        var hoje = _relogio.Agora.Date;
+        var ultimo = await _db.Pedidos.Where(p => p.PacienteId == u.Id && p.Status != StatusPedido.Cancelado && p.Status != StatusPedido.Recusado)
+            .OrderByDescending(p => p.CriadoEm).FirstOrDefaultAsync(ct);
+        if (ultimo is null) return new ProximaRenovacaoDto(false, null, null, null, false);
+
+        var inicio = ultimo.Status == StatusPedido.Entregue ? ultimo.AtualizadoEm : ultimo.CriadoEm;
+        var fim = inicio.Date.AddDays(ultimo.DiasCiclo);
+        var receita = await _db.Receitas.FirstOrDefaultAsync(x => x.Id == ultimo.ReceitaId, ct);
+        var validaAte = receita?.ValidaAte;
+        return new ProximaRenovacaoDto(true, fim, (int)(fim - hoje).TotalDays, validaAte, validaAte.HasValue && validaAte.Value.Date < fim);
     }
 
     public async Task<PedidoDto> CancelarAsync(UsuarioLogado u, int id, CancellationToken ct = default)

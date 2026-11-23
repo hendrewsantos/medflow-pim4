@@ -90,6 +90,19 @@ public sealed class AuthService
         return usuario.ParaResumo();
     }
 
+    /// <summary>RF05 — alteração da própria senha: exige a senha atual e a nova senha forte (RNF01).</summary>
+    public async Task AlterarSenhaAsync(UsuarioLogado u, AlterarSenhaRequest r, CancellationToken ct = default)
+    {
+        new Validador()
+            .Exigir(Regras.SenhaForte(r.NovaSenha), "novaSenha", "A nova senha deve ter ao menos 8 caracteres, com letras e números.")
+            .Lancar();
+        var usuario = await _db.Usuarios.FirstOrDefaultAsync(x => x.Id == u.Id && x.Ativo, ct) ?? throw new NaoEncontradoException("Usuário");
+        if (!_hasher.Verificar(r.SenhaAtual ?? string.Empty, usuario.SenhaHash))
+            throw new ValidacaoException("senhaAtual", "Senha atual incorreta.");
+        usuario.AlterarSenha(_hasher.Gerar(r.NovaSenha));
+        await _db.SaveChangesAsync(ct);
+    }
+
     private AuthResponse GerarResposta(Usuario usuario)
     {
         var token = _tokens.Gerar(usuario);

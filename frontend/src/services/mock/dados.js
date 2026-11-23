@@ -40,19 +40,19 @@ export async function criarDemonstracao(agoraReal = new Date()) {
   const carlos = await ops.cadastrarUsuario({ nome: 'Carlos Mendes', email: 'carlos@email.com', cpf: '24763598155', senha: SENHA_DEMO, perfil: 'Paciente', consentimentos: termos,
     endereco: 'Rua das Acácias, 120 — Vila Mariana, São Paulo/SP — 04101-000', telefone: '(11) 98812-4410' })
   const maria = await ops.cadastrarUsuario({ nome: 'Maria Aparecida Lopes', email: 'maria.lopes@email.com', cpf: '85351346893', senha: SENHA_DEMO, perfil: 'Paciente', consentimentos: termos,
-    endereco: 'Av. Jabaquara, 1500, ap. 42 — Saúde, São Paulo/SP — 04046-000' })
+    endereco: 'Av. Jabaquara, 1500, ap. 42 — Saúde, São Paulo/SP — 04046-000', telefone: '(11) 97733-2108' })
   const jose = await ops.cadastrarUsuario({ nome: 'José Ribeiro', email: 'jose.ribeiro@email.com', cpf: '12345678909', senha: SENHA_DEMO, perfil: 'Paciente', consentimentos: termos,
-    endereco: 'Rua Tutóia, 300 — Paraíso, São Paulo/SP — 04007-000' })
+    endereco: 'Rua Tutóia, 300 — Paraíso, São Paulo/SP — 04007-000', telefone: '(11) 96655-0192' })
   const teresa = await ops.cadastrarUsuario({ nome: 'Teresa Nogueira', email: 'teresa.n@email.com', cpf: '93541134780', senha: SENHA_DEMO, perfil: 'Paciente', consentimentos: termos,
-    endereco: 'Rua Domingos de Morais, 2200 — Vila Mariana, São Paulo/SP — 04036-000' })
+    endereco: 'Rua Domingos de Morais, 2200 — Vila Mariana, São Paulo/SP — 04036-000', telefone: '(11) 95544-7731' })
   const antonio = await ops.cadastrarUsuario({ nome: 'Antônio Ferraz', email: 'antonio.ferraz@email.com', cpf: '04629016880', senha: SENHA_DEMO, perfil: 'Paciente', consentimentos: termos,
-    endereco: 'Rua Vergueiro, 3185 — Vila Mariana, São Paulo/SP — 04101-300' })
+    endereco: 'Rua Vergueiro, 3185 — Vila Mariana, São Paulo/SP — 04101-300', telefone: '(11) 94433-8820' })
   const lucia = await ops.cadastrarUsuario({ nome: 'Lúcia Martins', email: 'lucia.martins@email.com', cpf: cpf('714602380'), senha: SENHA_DEMO, perfil: 'Paciente', consentimentos: termos,
-    endereco: 'Rua Loefgren, 1560 — Vila Clementino, São Paulo/SP — 04040-001' })
+    endereco: 'Rua Loefgren, 1560 — Vila Clementino, São Paulo/SP — 04040-001', telefone: '(11) 93322-6654' })
 
   // ── Catálogo ──
-  const med = (nome, principioAtivo, concentracao, forma, tarja, nivelMinimo, controleEspecial = false) =>
-    ops.criarMedicamento({ nome, principioAtivo, concentracao, formaFarmaceutica: forma, tarja, nivelMinimo, controleEspecial })
+  const med = (nome, principioAtivo, concentracao, forma, tarja, nivelMinimo, controleEspecial = false, extra = {}) =>
+    ops.criarMedicamento({ nome, principioAtivo, concentracao, formaFarmaceutica: forma, tarja, nivelMinimo, controleEspecial, ...extra })
   const losartana = med('Losartana potássica', 'losartana potássica', '50 mg', 'comprimido', 'Vermelha', 120)
   const metformina = med('Metformina', 'cloridrato de metformina', '850 mg', 'comprimido', 'Vermelha', 120)
   const sinvastatina = med('Sinvastatina', 'sinvastatina', '20 mg', 'comprimido', 'Vermelha', 60)
@@ -64,6 +64,9 @@ export async function criarDemonstracao(agoraReal = new Date()) {
   const anlodipino = med('Anlodipino', 'besilato de anlodipino', '5 mg', 'comprimido', 'Vermelha', 60)
   med('Clonazepam', 'clonazepam', '2 mg', 'comprimido', 'Preta', 30, true)
   const clonazepam = s.estado.medicamentos.at(-1)
+  // Itens que o paciente não vê no catálogo (só a equipe): antimicrobiano (receita retida) e termolábil (cadeia fria).
+  const amoxicilina = med('Amoxicilina', 'amoxicilina tri-hidratada', '500 mg', 'cápsula', 'Vermelha', 40, false, { categoria: 'Antimicrobiano' })
+  const insulina = med('Insulina NPH', 'insulina humana NPH', '100 UI/mL', 'frasco-ampola', 'Vermelha', 20, false, { termolabil: true })
 
   const entrada = (m, numero, fab, val, qtd, quando) => { em(quando); ops.registrarEntradaLote(m.id, { numero, fabricacao: fab, validade: val, quantidade: qtd }, juliana.id) }
   entrada(aas, 'AAS2511', somarMeses(hoje, -24), somarDias(hoje, -5), 24, somarMeses(hoje, -12))          // venceu: alerta de descarte
@@ -78,6 +81,8 @@ export async function criarDemonstracao(agoraReal = new Date()) {
   entrada(hctz, 'HCT2607', somarMeses(hoje, -2), somarMeses(hoje, 10), 220, somarDias(hoje, -45))
   entrada(anlodipino, 'ANL2611', somarMeses(hoje, -1), somarMeses(hoje, 12), 240, somarDias(hoje, -45))
   entrada(clonazepam, 'CLO2605', somarMeses(hoje, -3), somarMeses(hoje, 9), 60, somarDias(hoje, -45))
+  entrada(amoxicilina, 'AMX2606', somarMeses(hoje, -2), somarMeses(hoje, 14), 90, somarDias(hoje, -45))
+  entrada(insulina, 'INS2607', somarMeses(hoje, -1), somarMeses(hoje, 6), 30, somarDias(hoje, -45))
   entrada(losartana, 'LOS2702', somarMeses(hoje, -1), somarMeses(hoje, 14), 120, somarDias(hoje, -6))
 
   // ── Boxes de cada paciente ──

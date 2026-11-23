@@ -26,6 +26,13 @@ public sealed class AuthController : BaseController
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request, CancellationToken ct) =>
         Ok(await _auth.LoginAsync(request, ct));
 
+    [HttpPost("alterar-senha")]
+    public async Task<IActionResult> AlterarSenha(AlterarSenhaRequest request, CancellationToken ct)
+    {
+        await _auth.AlterarSenhaAsync(Logado, request, ct);
+        return NoContent();
+    }
+
     [HttpGet("eu")]
     public async Task<ActionResult<UsuarioResumo>> Eu(CancellationToken ct) => Ok(await _auth.ObterAsync(Logado, ct));
 }
