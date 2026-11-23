@@ -4,7 +4,7 @@ import { onMounted, reactive, ref } from 'vue'
 import ModalDialogo from '../../components/ModalDialogo.vue'
 import { api } from '../../services/api.js'
 import { useUiStore } from '../../stores/ui.js'
-import { dataHora, dataSo, numero, tarjaTexto, MOV } from '../../utils/formato.js'
+import { dataHora, dataSo, numero, tarjaTexto, CATEGORIA, MOV } from '../../utils/formato.js'
 
 const ui = useUiStore()
 const aba = ref('medicamentos')
@@ -14,7 +14,7 @@ const aberto = ref(null)
 const entrada = ref(null)
 const novoAberto = ref(false)
 const lote = reactive({ numero: '', quantidade: null, fabricacao: '', validade: '' })
-const novo = reactive({ nome: '', concentracao: '', principioAtivo: '', formaFarmaceutica: 'comprimido', tarja: 'Vermelha', nivelMinimo: 60, controleEspecial: false })
+const novo = reactive({ nome: '', concentracao: '', principioAtivo: '', formaFarmaceutica: 'comprimido', tarja: 'Vermelha', nivelMinimo: 60, categoria: 'Comum', termolabil: false })
 
 async function carregar() {
   try {
@@ -46,7 +46,7 @@ async function salvarEntrada() {
 }
 async function salvarMedicamento() {
   try {
-    const m = await api.medicamentos.criar({ ...novo, nivelMinimo: Number(novo.nivelMinimo) })
+    const m = await api.medicamentos.criar({ ...novo, nivelMinimo: Number(novo.nivelMinimo), controleEspecial: novo.categoria === 'ControleEspecial' })
     novoAberto.value = false
     ui.avisar(`${m.nome} cadastrado. Registre a entrada do primeiro lote.`, 'ok')
     await carregar()
@@ -66,17 +66,18 @@ async function salvarMedicamento() {
 
   <div v-if="aba === 'medicamentos'" class="tabela-wrap">
     <table class="tabela">
-      <thead><tr><th>Medicamento</th><th>Tarja</th><th class="n">Físico</th><th class="n">Reservado</th><th class="n">Disponível (ciclo)</th><th class="n">Mínimo</th><th></th></tr></thead>
+      <thead><tr><th>Medicamento</th><th>Tarja</th><th>Categoria</th><th class="n">Físico</th><th class="n">Reservado</th><th class="n">Disponível (ciclo)</th><th class="n">Mínimo</th><th></th></tr></thead>
       <tbody>
         <template v-for="m in meds" :key="m.id">
           <tr class="clicavel" tabindex="0" :aria-expanded="aberto === m.id" @click="aberto = aberto === m.id ? null : m.id" @keydown.enter="aberto = aberto === m.id ? null : m.id">
-            <td><strong>{{ m.nome }} {{ m.concentracao }}</strong><div class="subtle">{{ m.principioAtivo }}{{ m.controleEspecial ? ' · controle especial (fora da Box)' : '' }}</div></td>
+            <td><strong>{{ m.nome }} {{ m.concentracao }}</strong><div class="subtle">{{ m.principioAtivo }}{{ m.categoria !== 'Comum' || m.termolabil ? ' · fora do catálogo do paciente' : '' }}</div></td>
             <td><span class="tarja" :class="`tarja-${m.tarja}`">{{ tarjaTexto(m.tarja) }}</span></td>
+            <td><span class="pill" :class="m.categoria === 'Comum' ? 'pill-neutro' : 'pill-espera'">{{ CATEGORIA[m.categoria] ?? m.categoria }}</span> <span v-if="m.termolabil" class="pill pill-frio">Termolábil</span></td>
             <td class="n">{{ numero(m.quantidadeFisica) }}</td><td class="n">{{ numero(m.quantidadeReservada) }}</td>
             <td class="n"><strong>{{ numero(m.disponivelParaCiclo) }}</strong></td><td class="n">{{ m.nivelMinimo }}</td>
             <td><span class="pill" :class="m.abaixoDoMinimo ? 'pill-ruim' : 'pill-ok'">{{ m.abaixoDoMinimo ? 'Abaixo do mínimo' : 'OK' }}</span></td>
           </tr>
-          <tr v-if="aberto === m.id" class="sub"><td colspan="7"><div class="stack">
+          <tr v-if="aberto === m.id" class="sub"><td colspan="8"><div class="stack">
             <div class="tabela-wrap"><table class="tabela">
               <thead><tr><th>Lote</th><th>Fabricação</th><th>Validade</th><th class="n">Físico</th><th class="n">Reservado</th><th class="n">Disponível</th><th>Situação</th></tr></thead>
               <tbody><tr v-for="l in m.lotes" :key="l.id"><td class="mono">{{ l.numero }}</td><td>{{ dataSo(l.fabricacao) }}</td><td>{{ dataSo(l.validade) }}</td>
@@ -117,7 +118,9 @@ async function salvarMedicamento() {
       <div class="campo"><label for="m-forma">Forma farmacêutica</label><select id="m-forma" v-model="novo.formaFarmaceutica" class="input"><option>comprimido</option><option>cápsula</option><option>drágea</option></select></div>
       <div class="campo"><label for="m-tarja">Tarja</label><select id="m-tarja" v-model="novo.tarja" class="input"><option value="Vermelha">Vermelha</option><option value="Livre">Sem tarja</option><option value="Preta">Preta</option></select></div>
       <div class="campo"><label for="m-min">Nível mínimo (un.)</label><input id="m-min" v-model="novo.nivelMinimo" class="input" type="number" min="0" /></div>
-      <label class="check inteiro"><input id="m-ctrl" v-model="novo.controleEspecial" type="checkbox" /> Controle especial (Portaria SVS/MS 344/1998) — não poderá ser incluído na Box</label>
+      <div class="campo"><label for="m-cat">Categoria regulatória</label><select id="m-cat" v-model="novo.categoria" class="input"><option v-for="(rotulo, k) in CATEGORIA" :key="k" :value="k">{{ rotulo }}</option></select></div>
+      <label class="check"><input id="m-frio" v-model="novo.termolabil" type="checkbox" /> Termolábil (precisa de refrigeração)</label>
+      <p class="subtle inteiro">Só medicamentos "Comum" e não termolábeis aparecem para o paciente montar a Box.</p>
     </form>
     <template #rodape><button class="btn" type="button" @click="novoAberto = false">Cancelar</button><button class="btn btn-primario" type="submit" form="form-med">Cadastrar</button></template>
   </ModalDialogo>

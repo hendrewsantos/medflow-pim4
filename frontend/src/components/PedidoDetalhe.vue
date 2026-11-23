@@ -15,7 +15,7 @@ defineEmits(['cancelar'])
 <template>
   <div class="stack-lg">
     <div class="row-between">
-      <div><span class="eyebrow">Pedido #{{ pedido.id }}</span><h3>Box do ciclo de {{ data(pedido.criadoEm) }}</h3></div>
+      <div><h3>Pedido #{{ pedido.id }} · Box do ciclo de {{ data(pedido.criadoEm) }}</h3></div>
       <StatusPill :status="pedido.status" />
     </div>
     <LinhaDoTempo :pedido="pedido" />

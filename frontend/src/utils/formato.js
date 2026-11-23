@@ -35,6 +35,7 @@ export const ETAPA_ROTULO = { Pendente: 'Pedido confirmado', EmSeparacao: 'Em se
 export const PERFIL = { Paciente: 'Paciente', Administrador: 'Farmacêutica RT', Funcionario: 'Operador da farmácia', Entregador: 'Entregador' }
 export const MOV = { Entrada: 'Entrada', Reserva: 'Reserva', LiberacaoReserva: 'Liberação de reserva', Baixa: 'Baixa' }
 export const tarjaTexto = (t) => (t === 'Livre' ? 'Sem tarja' : `Tarja ${String(t).toLowerCase()}`)
+export const CATEGORIA = { Comum: 'Comum', ControleEspecial: 'Controle especial', Antimicrobiano: 'Antimicrobiano', RetencaoDeReceita: 'Retenção de receita' }
 export const periodo = (h) => { const n = Number(h.slice(0, 2)); return n < 12 ? 'Manhã' : n < 18 ? 'Tarde' : 'Noite' }
 
 /** Mensagem de status honesta para o paciente (RN13). */

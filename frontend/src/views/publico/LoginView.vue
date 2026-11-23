@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import LadoMarca from './LadoMarca.vue'
+import RodapePublico from './RodapePublico.vue'
 import { useAuthStore } from '../../stores/auth.js'
 import { useUiStore } from '../../stores/ui.js'
 import { MODO_DEMO } from '../../services/api.js'
@@ -51,6 +52,7 @@ async function entrar(e = email.value, s = senha.value) {
           <RouterLink class="btn-link" :to="{ name: 'cadastro' }">Criar conta de paciente</RouterLink>
         </div>
       </form>
+      <RodapePublico />
     </section>
   </div>
 </template>

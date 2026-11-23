@@ -1,12 +1,13 @@
 <script setup>
-// UC10 e UC11 — rotas do entregador (mobile-first): iniciar, confirmar com o nome de quem recebeu, ou registrar ocorrência.
+// UC10 e UC11 — rotas do entregador (mobile-first). RN13: a API entrega só o resumo (EntregaResumoDto):
+// código, paciente, endereço, telefone, total de sachês, status e tentativa. Sem medicamentos, lotes nem receita.
 import { computed, onMounted, reactive, ref } from 'vue'
 import Icone from '../../components/Icone.vue'
 import ModalDialogo from '../../components/ModalDialogo.vue'
 import { api } from '../../services/api.js'
 import { useAuthStore } from '../../stores/auth.js'
 import { useUiStore } from '../../stores/ui.js'
-import { data, hora, relativo, primeiroNome } from '../../utils/formato.js'
+import { primeiroNome } from '../../utils/formato.js'
 
 const auth = useAuthStore()
 const ui = useUiStore()
@@ -23,13 +24,14 @@ async function carregar() {
   try {
     const [disp, minhas] = await Promise.all([api.entregas.disponiveis(), api.entregas.minhas()])
     grupos.disponiveis = disp
-    grupos.rota = minhas.filter((p) => p.status === 'EmRota')
-    grupos.concluidas = minhas.filter((p) => p.status !== 'EmRota')
+    grupos.rota = minhas.filter((e) => e.status === 'EmRota')
+    grupos.concluidas = minhas.filter((e) => e.status !== 'EmRota')
   } catch (e) { ui.erro(e) }
 }
 onMounted(carregar)
 
-const unidades = (p) => p.itens.reduce((s, i) => s + i.quantidade, 0)
+const linkTelefone = (e) => `tel:${String(e.telefone).replace(/[^\d+]/g, '')}`
+const linkMapa = (e) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.endereco)}`
 
 async function executar(fn, msg, proximaAba) {
   try {
@@ -39,10 +41,10 @@ async function executar(fn, msg, proximaAba) {
     await carregar()
   } catch (e) { ui.erro(e) }
 }
-const iniciar = (p) => executar(() => api.entregas.iniciar(p.id), 'Rota iniciada. O paciente já vê "Saiu para entrega".', 'rota')
-const confirmar = (p) => executar(() => api.entregas.confirmar(p.id, recebedor[p.id] || ''), 'Entrega confirmada.', 'concluidas')
+const iniciar = (e) => executar(() => api.entregas.iniciar(e.pedidoId), 'Rota iniciada. O paciente já vê "Saiu para entrega".', 'rota')
+const confirmar = (e) => executar(() => api.entregas.confirmar(e.pedidoId, recebedor[e.pedidoId] || ''), 'Entrega confirmada.', 'concluidas')
 async function salvarOcorrencia() {
-  await executar(() => api.entregas.ocorrencia(ocorrencia.value.id, motivo.value), 'Ocorrência registrada. O paciente foi informado no painel dele.', 'disponiveis')
+  await executar(() => api.entregas.ocorrencia(ocorrencia.value.pedidoId, motivo.value), 'Ocorrência registrada. A Box volta para "Prontas para sair".', 'disponiveis')
   ocorrencia.value = null
   motivo.value = ''
 }
@@ -52,23 +54,27 @@ async function salvarOcorrencia() {
   <div class="cabecalho-pagina"><div><h1>Olá, {{ primeiroNome(auth.usuario?.nome) }}</h1><p>Confirme cada entrega com o nome de quem recebeu: é o comprovante que o paciente e a farmácia veem.</p></div></div>
   <div class="abas" role="tablist"><button v-for="[k, r] in ABAS" :key="k" role="tab" type="button" :aria-selected="aba === k" @click="aba = k">{{ r }}<span class="cont">{{ grupos[k].length }}</span></button></div>
   <div v-if="lista.length" class="entregas">
-    <article v-for="p in lista" :key="p.id" class="entrega">
-      <div class="row-between"><span class="eyebrow">Box #{{ p.id }} · {{ p.itens.length }} medicamentos · {{ unidades(p) }} un.</span>
-        <span v-if="aba === 'concluidas'" class="pill" :class="p.status === 'Entregue' ? 'pill-ok' : 'pill-espera'">{{ p.status === 'Entregue' ? 'Entregue' : 'Ocorrência' }}</span></div>
-      <div><strong>{{ p.paciente }}</strong><p class="endereco">{{ p.enderecoEntrega }}</p></div>
+    <article v-for="e in lista" :key="e.pedidoId" class="entrega">
+      <div class="row-between"><span><strong>{{ e.codigo }}</strong> · {{ e.totalSaches }} sachês</span>
+        <span v-if="aba === 'concluidas'" class="pill" :class="e.status === 'Entregue' ? 'pill-ok' : 'pill-espera'">{{ e.status === 'Entregue' ? 'Entregue' : 'Ocorrência' }}</span></div>
+      <div><strong>{{ e.paciente }}</strong><p class="endereco">{{ e.endereco }}</p></div>
+      <div v-if="aba !== 'concluidas'" class="acoes-entrega">
+        <a v-if="e.telefone" class="btn" :href="linkTelefone(e)">Ligar</a>
+        <a class="btn" :href="linkMapa(e)" target="_blank" rel="noopener noreferrer">Abrir no mapa</a>
+      </div>
       <template v-if="aba === 'disponiveis'">
-        <p class="subtle">Pronta {{ relativo(p.atualizadoEm) }}<template v-if="p.entregas.length"> · {{ p.entregas.length }}ª tentativa não concluída: {{ p.entregas.at(-1).ocorrencia }}</template></p>
-        <button class="btn btn-primario" type="button" @click="iniciar(p)"><Icone nome="entrega" />Iniciar rota</button>
+        <p v-if="e.tentativa" class="subtle">{{ e.tentativa }}ª tentativa não foi concluída. Esta será a tentativa {{ e.tentativa + 1 }}.</p>
+        <button class="btn btn-primario" type="button" @click="iniciar(e)"><Icone nome="entrega" />Iniciar rota</button>
       </template>
       <template v-else-if="aba === 'rota'">
-        <p class="subtle">Saiu às {{ hora(p.entregas.at(-1).iniciadaEm) }} · tentativa {{ p.entregas.at(-1).tentativa }}</p>
-        <form class="stack" novalidate @submit.prevent="confirmar(p)">
-          <div class="campo"><label :for="`rec-${p.id}`">Quem recebeu?</label><input :id="`rec-${p.id}`" v-model="recebedor[p.id]" class="input" placeholder="Nome de quem recebeu" autocomplete="off" /></div>
+        <p class="subtle">Tentativa {{ e.tentativa }}</p>
+        <form class="stack" novalidate @submit.prevent="confirmar(e)">
+          <div class="campo"><label :for="`rec-${e.pedidoId}`">Quem recebeu?</label><input :id="`rec-${e.pedidoId}`" v-model="recebedor[e.pedidoId]" class="input" placeholder="Nome de quem recebeu" autocomplete="off" /></div>
           <button class="btn btn-primario" type="submit"><Icone nome="ok" />Confirmar entrega</button>
         </form>
-        <button class="btn" type="button" @click="ocorrencia = p">Não consegui entregar</button>
+        <button class="btn" type="button" @click="ocorrencia = e">Não consegui entregar</button>
       </template>
-      <p v-else class="subtle">{{ p.status === 'Entregue' ? `Entregue para ${p.entregas.at(-1).recebedor} em ${data(p.entregas.at(-1).concluidaEm)} às ${hora(p.entregas.at(-1).concluidaEm)}` : `Ocorrência: ${p.entregas.find((e) => e.ocorrencia)?.ocorrencia}` }}</p>
+      <p v-else class="subtle">{{ e.status === 'Entregue' ? `Entregue na tentativa ${e.tentativa}.` : `Ocorrência na tentativa ${e.tentativa}: a Box voltou para a fila de saída.` }}</p>
     </article>
   </div>
   <div v-else class="vazio"><Icone nome="entrega" /><p>{{ aba === 'rota' ? 'Nenhuma entrega em andamento.' : aba === 'disponiveis' ? 'Nenhuma Box pronta para sair agora.' : 'Sem entregas concluídas.' }}</p></div>

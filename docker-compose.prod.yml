@@ -1,0 +1,48 @@
+# Produção/homologação:  cp deploy/.env.example .env  (preencha)  e  docker compose -f docker-compose.prod.yml up -d --build
+# O banco não publica porta; usuário da aplicação restrito ao esquema; dados e receitas em volumes nomeados.
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?defina no .env}
+      MYSQL_DATABASE: medflow
+      MYSQL_USER: medflow_app
+      MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?defina no .env}
+    volumes: [dados-mysql:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      retries: 20
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      mysql: { condition: service_healthy }
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__MedFlow: server=mysql;port=3306;database=medflow;user=medflow_app;password=${MYSQL_APP_PASSWORD}
+      Jwt__Chave: ${JWT_CHAVE:?defina no .env}
+      Cors__Origens__0: https://${DOMINIO:?defina no .env}
+      Banco__AplicarMigrations: "true"
+      Demo__Semear: ${DEMO_SEMEAR:-false}
+      Armazenamento__Pasta: /dados/receitas
+    volumes: [receitas:/dados/receitas]
+  web:
+    build:
+      context: ./frontend
+      args: { VITE_API_URL: "" }
+    restart: unless-stopped
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [api, web]
+    environment: { DOMINIO: "${DOMINIO}" }
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-dados:/data
+volumes:
+  dados-mysql:
+  receitas:
+  caddy-dados:

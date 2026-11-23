@@ -17,6 +17,7 @@ const receitas = ref([])
 const ativo = ref(null)
 const ultimo = ref(null)
 const recusado = ref(null)
+const renovacao = ref(null)
 
 const EM_ANDAMENTO = ['Pendente', 'EmSeparacao', 'AguardandoEntregador', 'EmRota']
 const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -28,6 +29,7 @@ onMounted(async () => {
     const a = pedidos.find((p) => EM_ANDAMENTO.includes(p.status))
     const u = pedidos.find((p) => p.status === 'Entregue')
     ;[ativo.value, ultimo.value] = await Promise.all([a && api.pedidos.obter(a.id), u && api.pedidos.obter(u.id)])
+    renovacao.value = await api.pedidos.proximaRenovacao().catch(() => null)
     if (pedidos[0]?.status === 'Recusado') recusado.value = await api.pedidos.obter(pedidos[0].id)
   } catch (e) {
     ui.erro(e)
@@ -44,13 +46,13 @@ const base = computed(() => ativo.value || ultimo.value)
 </script>
 
 <template>
-  <div class="cabecalho-pagina"><div><span class="eyebrow">{{ hoje }}</span><h1>Olá, {{ primeiroNome(auth.usuario?.nome) }}</h1></div></div>
+  <div class="cabecalho-pagina"><div><h1>Início</h1></div></div>
   <p v-if="carregando" class="muted">Carregando…</p>
   <div v-else class="grid-main-side">
     <div class="stack-lg">
       <section class="card" aria-label="Sua Box">
         <div v-if="ativo" class="stack-lg">
-          <div class="row-between"><div><span class="eyebrow">Box em andamento · pedido #{{ ativo.id }}</span><h3>Ciclo de {{ data(ativo.criadoEm) }}</h3></div><StatusPill :status="ativo.status" /></div>
+          <div class="row-between"><div><h3>Box em andamento · pedido #{{ ativo.id }}</h3><p class="subtle">Ciclo de {{ data(ativo.criadoEm) }}</p></div><StatusPill :status="ativo.status" /></div>
           <LinhaDoTempo :pedido="ativo" />
           <div class="aviso aviso-info"><Icone nome="info" /><p>{{ mensagemStatus(ativo) }}</p></div>
           <div><RouterLink class="btn" :to="{ name: 'pedidos', params: { id: ativo.id } }">Ver detalhes do pedido</RouterLink></div>
@@ -60,7 +62,7 @@ const base = computed(() => ativo.value || ultimo.value)
           <div><RouterLink class="btn btn-primario" :to="{ name: 'receitas' }">Enviar nova receita</RouterLink></div>
         </div>
         <div v-else-if="ultimo" class="stack">
-          <div class="row-between"><div><span class="eyebrow">Sem Box em preparação</span><h3>Última Box entregue {{ relativo(entregueEm) }}</h3></div><StatusPill status="Entregue" /></div>
+          <div class="row-between"><div><h3>Última Box entregue {{ relativo(entregueEm) }}</h3><p class="subtle">Nenhuma Box em preparação</p></div><StatusPill status="Entregue" /></div>
           <div class="aviso" :class="diasRestantes <= 5 ? 'aviso-espera' : 'aviso-info'"><Icone nome="relogio" />
             <p>Seus sachês cobrem até <strong>{{ data(cobreAte) }}</strong> ({{ diasRestantes > 0 ? `${diasRestantes} dias` : 'acabam hoje' }}).
               {{ diasRestantes <= 5 ? 'Renove agora para não interromper o tratamento.' : 'Renove alguns dias antes do fim.' }}</p></div>
@@ -76,6 +78,16 @@ const base = computed(() => ativo.value || ultimo.value)
       </section>
     </div>
     <aside class="stack-lg">
+      <section v-if="renovacao" class="card stack" aria-label="Próxima renovação"><span class="eyebrow">Próxima renovação</span>
+        <template v-if="renovacao.temBox">
+          <p class="renov-dias"><strong>{{ renovacao.diasRestantes > 0 ? renovacao.diasRestantes : 0 }}</strong> {{ renovacao.diasRestantes === 1 ? 'dia' : 'dias' }} até o fim da sua Box</p>
+          <p class="muted">Sua Box atual dura até <strong>{{ dataSo(renovacao.dataEstimadaFimDaBox) }}</strong>. {{ renovacao.diasRestantes <= 5 ? 'Renove agora para não ficar sem os medicamentos.' : 'Renove alguns dias antes do fim.' }}</p>
+          <div v-if="renovacao.receitaVenceAntes" class="aviso aviso-espera"><Icone nome="alerta" />
+            <p>Sua receita vale só até <strong>{{ dataSo(renovacao.receitaValidaAte) }}</strong>, antes do fim da Box. Envie uma receita nova para a próxima renovação.</p></div>
+          <div class="row"><RouterLink class="btn" :to="{ name: renovacao.receitaVenceAntes ? 'receitas' : 'box' }">{{ renovacao.receitaVenceAntes ? 'Enviar nova receita' : 'Renovar minha Box' }}</RouterLink></div>
+        </template>
+        <p v-else class="muted">Assim que você receber a primeira Box, mostramos aqui quando ela acaba e quando renovar.</p>
+      </section>
       <section class="card stack"><span class="eyebrow">Receita</span>
         <template v-if="receitaValida">
           <div class="row-between"><strong>{{ receitaValida.nomeOriginal }}</strong><StatusPill :status="receitaValida.status" tipo="receita" /></div>

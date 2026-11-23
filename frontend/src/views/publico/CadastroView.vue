@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import LadoMarca from './LadoMarca.vue'
+import RodapePublico from './RodapePublico.vue'
 import { useAuthStore } from '../../stores/auth.js'
 import { useUiStore } from '../../stores/ui.js'
 import { cpfValido, emailValido, senhaForte } from '../../domain/regras.js'
@@ -29,7 +30,7 @@ async function cadastrar() {
   if (!validar()) return
   try {
     await auth.cadastrar({ ...f })
-    ui.avisar('Conta criada. Bem-vindo(a) ao MedFlow!', 'ok')
+    ui.avisar('Conta criada.', 'ok')
     router.push({ name: 'inicio' })
   } catch (e) {
     if (e.erros) erros.value = e.erros
@@ -54,10 +55,11 @@ async function cadastrar() {
           <div class="campo inteiro"><label for="endereco">Endereço de entrega</label><input id="endereco" v-model="f.endereco" class="input" autocomplete="street-address" /><span v-if="erros.endereco" class="erro">{{ erros.endereco[0] }}</span></div>
         </div>
         <label class="check"><input id="aceiteTermos" v-model="f.aceiteTermos" type="checkbox" />
-          <span>Li e aceito os Termos de Uso e a Política de Privacidade. Meus dados de cadastro serão usados para identificar minha conta e entregar a Box (LGPD, art. 7º, I). Posso consultar, corrigir, exportar ou excluir meus dados a qualquer momento.</span></label>
+          <span>Li e aceito os <RouterLink :to="{ name: 'termos' }" target="_blank" rel="noopener">Termos de Uso</RouterLink> e a <RouterLink :to="{ name: 'privacidade' }" target="_blank" rel="noopener">Política de Privacidade</RouterLink> (versão 1.0). Meus dados de cadastro serão usados para identificar minha conta e entregar a Box (LGPD, art. 7º, I). Posso consultar, corrigir, exportar ou excluir meus dados a qualquer momento.</span></label>
         <span v-if="erros.aceiteTermos" class="erro" style="color: var(--bad); font-size: var(--t-sm)">{{ erros.aceiteTermos[0] }}</span>
         <div class="row-between"><button class="btn btn-primario" type="submit">Criar conta</button><RouterLink class="btn-link" :to="{ name: 'login' }">Já tenho conta</RouterLink></div>
       </form>
+      <RodapePublico />
     </section>
   </div>
 </template>

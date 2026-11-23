@@ -1,0 +1,42 @@
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request:
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env: { MYSQL_ROOT_PASSWORD: ci-senha-descartavel }
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -pci-senha-descartavel" --health-interval=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "8.0.x" }
+      - run: dotnet build backend/MedFlow.sln --configuration Release
+      - name: Testes (inclui concorrência em MySQL real)
+        env: { MEDFLOW_TESTE_MYSQL: "server=127.0.0.1;port=3306;user=root;password=ci-senha-descartavel" }
+        run: dotnet test backend/MedFlow.sln --configuration Release --no-build
+      - name: Vulnerabilidades nas dependências
+        run: dotnet list backend/MedFlow.sln package --vulnerable --include-transitive
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+  imagens:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t medflow-api ./backend
+      - run: docker build -t medflow-web ./frontend

@@ -1,0 +1,7 @@
+# Proxy reverso com HTTPS automático. Defina DOMINIO no .env (ex.: medflow.exemplo.me).
+{$DOMINIO} {
+  encode gzip
+  handle /api/* { reverse_proxy api:8080 }
+  handle /health/* { reverse_proxy api:8080 }
+  handle { reverse_proxy web:80 }
+}

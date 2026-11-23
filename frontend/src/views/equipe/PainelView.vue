@@ -11,11 +11,14 @@ const auth = useAuthStore()
 const ui = useUiStore()
 const ind = ref(null)
 const alertas = ref([])
+const previsao = ref([])
+const baixando = ref('')
+const RELATORIOS = [['estoque', 'Estoque'], ['lotes-a-vencer', 'Lotes a vencer'], ['entregas', 'Entregas']]
 const pico = ref(null)
 const FLUXO = ['Pendente', 'EmSeparacao', 'AguardandoEntregador', 'EmRota', 'Entregue']
 
 onMounted(async () => {
-  try { [ind.value, alertas.value] = await Promise.all([api.painel.obter(), api.medicamentos.alertas()]) } catch (e) { ui.erro(e) }
+  try { [ind.value, alertas.value, previsao.value] = await Promise.all([api.painel.obter(), api.medicamentos.alertas(), api.previsaoReposicao.listar()]) } catch (e) { ui.erro(e) }
 })
 
 const maximo = computed(() => Math.max(1, ...FLUXO.map((s) => ind.value?.pedidosPorStatus[s] ?? 0)))
@@ -32,13 +35,20 @@ const kpis = computed(() => {
   ]
 })
 
+async function exportar(nome) {
+  baixando.value = nome
+  try { await api.relatorios.baixar(nome); ui.avisar('Relatório baixado.', 'ok') } catch (e) { ui.erro(e) } finally { baixando.value = '' }
+}
+
+const situacaoReposicao = (p) => (p.disponivel <= p.nivelMinimo ? ['Abaixo do mínimo', 'pill-ruim'] : p.diasAteMinimo === null ? ['Sem consumo', 'pill-neutro'] : p.diasAteMinimo <= 7 ? ['Repor já', 'pill-ruim'] : p.diasAteMinimo <= 30 ? ['Repor em breve', 'pill-espera'] : ['OK', 'pill-ok'])
+
 async function simularPico() {
   try { pico.value = await api.demo.simularPico() } catch (e) { ui.erro(e) }
 }
 </script>
 
 <template>
-  <div class="cabecalho-pagina"><div><h1>Painel da operação</h1><p>Indicadores de resultado para o paciente, e não de atividade: o que importa é a Box chegar inteira e no prazo.</p></div></div>
+  <div class="cabecalho-pagina"><div><h1>Painel da operação</h1></div></div>
   <div v-if="ind" class="stack-lg">
     <section class="kpis" aria-label="Indicadores">
       <div v-for="k in kpis" :key="k.rotulo" class="kpi" :class="k.classe"><span class="rotulo-kpi">{{ k.rotulo }}</span><span class="valor">{{ k.valor }}<small v-if="k.unidade">{{ k.unidade }}</small></span><span class="meta">{{ k.meta }}</span></div>
@@ -61,8 +71,19 @@ async function simularPico() {
         <p v-else class="muted">Nenhum alerta.</p>
       </section>
     </div>
+    <section class="card stack" aria-labelledby="h-prev">
+      <div class="row-between"><div><h3 id="h-prev">Previsão de reposição</h3><p class="subtle">Média móvel de 3 meses das baixas. "Dias até o mínimo" estima quando o saldo disponível chega ao nível mínimo.</p></div>
+        <div class="row" role="group" aria-label="Exportar relatórios em CSV">
+          <button v-for="[k, r] in RELATORIOS" :key="k" class="btn btn-sm" type="button" :disabled="baixando === k" @click="exportar(k)">{{ baixando === k ? 'Baixando…' : `CSV: ${r}` }}</button></div></div>
+      <div v-if="previsao.length" class="tabela-wrap"><table class="tabela">
+        <thead><tr><th>Medicamento</th><th class="n">Consumo médio/mês</th><th class="n">Disponível</th><th class="n">Mínimo</th><th class="n">Dias até o mínimo</th><th>Situação</th></tr></thead>
+        <tbody><tr v-for="p in previsao" :key="p.medicamentoId"><td>{{ p.nome }}</td><td class="n">{{ numero(p.consumoMedioMensal) }}</td><td class="n">{{ numero(p.disponivel) }}</td><td class="n">{{ numero(p.nivelMinimo) }}</td>
+          <td class="n">{{ p.diasAteMinimo === null ? '—' : numero(p.diasAteMinimo) }}</td><td><span class="pill" :class="situacaoReposicao(p)[1]">{{ situacaoReposicao(p)[0] }}</span></td></tr></tbody>
+      </table></div>
+      <p v-else class="muted">Sem dados de consumo ainda.</p>
+    </section>
     <section v-if="MODO_DEMO" class="card stack">
-      <div class="row-between"><div><span class="eyebrow">Desafio de Gestão de Serviços (ITIL 4)</span><h3>Teste do pico de renovação</h3></div>
+      <div class="row-between"><h3>Teste do pico de renovação</h3>
         <button class="btn btn-primario" type="button" @click="simularPico"><Icone nome="raio" />Simular dois pedidos sobre o mesmo saldo</button></div>
       <p class="muted">Reproduz o incidente do pitch: o pedido A pede todo o saldo de Losartana e, logo depois, o pedido B pede mais 60 unidades. Agora a reserva é feita na confirmação, dentro de uma transação.</p>
       <template v-if="pico">

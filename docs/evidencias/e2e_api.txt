@@ -1,0 +1,31 @@
+# Roteiro ponta a ponta contra a API real (ASP.NET Core 8 + MySQL 8.4 em Docker), executado em 22/11/2026 23:04
+OK    login carlos: 200
+OK    login juliana: 200
+OK    login bruno: 200
+OK    login rafael: 200
+OK    paciente não vê antimicrobiano, termolábil nem controlado: []
+OK    equipe vê os 12 itens do catálogo: 12
+OK    receita de demonstração aprovada com prescritor: ('Aprovada', True)
+OK    simulação mostra disponibilidade: (200, True)
+OK    confirmar Box (receita já aprovada vai direto para separação): (201, 'EmSeparacao')
+OK    reserva por lote (FEFO) registrada: True
+OK    segunda Box enquanto há uma em preparação: conflito: 409
+OK    paciente não finaliza Box: 403
+OK    operador finaliza Box com baixa: (200, 'AguardandoEntregador')
+OK    entregador vê a Box pronta: (200, 1)
+OK    entregador recebe só dados mínimos (sem itens, lotes ou receita): []
+OK    entregador não abre o detalhe do pedido: 403
+OK    iniciar rota: (200, 'EmRota')
+OK    confirmar sem recebedor é recusado: True
+OK    confirmar entrega: (200, 'Entregue')
+OK    linha do tempo do paciente: ['Pendente', 'EmSeparacao', 'AguardandoEntregador', 'EmRota', 'Entregue']
+OK    próxima renovação: (200, True, 30)
+OK    previsão de reposição calcula consumo da baixa: (200, 20)
+OK    CSV de estoque: (200, True)
+OK    paciente não baixa relatório: 403
+OK    painel da equipe: (200, 1)
+OK    alterar senha com senha atual errada: 400
+OK    revogar consentimento de saúde: 200
+OK    novo pedido após revogar é recusado: True
+
+RESULTADO: tudo certo

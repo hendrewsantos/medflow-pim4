@@ -6,7 +6,11 @@ const FARMA = ['Administrador']
 const EQUIPE = ['Administrador', 'Funcionario']
 
 const routes = [
-  { path: '/', redirect: () => ({ name: useAuthStore().autenticado ? useAuthStore().rotaInicial : 'login' }) },
+  // Páginas públicas com layout próprio (aberta: também acessíveis a quem já entrou).
+  { path: '/', name: 'home', component: () => import('../views/publico/InicioPublicoView.vue'), meta: { publica: true, aberta: true, titulo: 'Início' } },
+  { path: '/termos', name: 'termos', component: () => import('../views/publico/TermosView.vue'), meta: { publica: true, aberta: true, titulo: 'Termos de Uso' } },
+  { path: '/privacidade', name: 'privacidade', component: () => import('../views/publico/PrivacidadeView.vue'), meta: { publica: true, aberta: true, titulo: 'Política de Privacidade' } },
+  { path: '/contato', name: 'contato', component: () => import('../views/publico/ContatoView.vue'), meta: { publica: true, aberta: true, titulo: 'Contato' } },
   { path: '/entrar', name: 'login', component: () => import('../views/publico/LoginView.vue'), meta: { publica: true, titulo: 'Entrar' } },
   { path: '/cadastro', name: 'cadastro', component: () => import('../views/publico/CadastroView.vue'), meta: { publica: true, titulo: 'Criar conta' } },
 
@@ -31,6 +35,7 @@ const router = createRouter({ history: createWebHistory(), routes, scrollBehavio
 // Guarda de rotas por perfil. É conveniência de interface: quem garante o acesso é a API (JWT + [Authorize]).
 router.beforeEach((to) => {
   const auth = useAuthStore()
+  if (to.meta.aberta) return true
   if (to.meta.publica) return auth.autenticado ? { name: auth.rotaInicial } : true
   if (!auth.autenticado) return { name: 'login', query: { voltar: to.fullPath } }
   if (to.meta.perfis && !to.meta.perfis.includes(auth.perfil)) return { name: auth.rotaInicial }

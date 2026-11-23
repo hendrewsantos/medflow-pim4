@@ -1,6 +1,6 @@
 <script setup>
 // UC12 — direitos do titular (LGPD art. 18): acesso, correção, portabilidade e eliminação.
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Icone from '../../components/Icone.vue'
 import ModalDialogo from '../../components/ModalDialogo.vue'
@@ -8,6 +8,7 @@ import { api, MODO_DEMO } from '../../services/api.js'
 import { useAuthStore } from '../../stores/auth.js'
 import { useUiStore } from '../../stores/ui.js'
 import { data, dataHora, formatarCpf } from '../../utils/formato.js'
+import { senhaForte } from '../../domain/regras.js'
 
 const auth = useAuthStore()
 const ui = useUiStore()
@@ -17,6 +18,11 @@ const form = ref({ nome: '', email: '', telefone: '', endereco: '' })
 const json = ref('')
 const excluindo = ref(false)
 const confirmacao = ref('')
+const revogando = ref(false)
+const trocandoSenha = ref(false)
+const senhas = ref({ atual: '', nova: '', confirmar: '' })
+const errosSenha = ref([])
+const saudeAtiva = computed(() => !!dados.value?.consentimentos.some((c) => c.tipo === 'DadosDeSaude' && !c.revogadoEm))
 
 async function carregar() {
   try {
@@ -49,6 +55,39 @@ async function exportar() {
 
 async function copiar() {
   try { await navigator.clipboard.writeText(json.value); ui.avisar('Copiado.', 'ok') } catch { ui.avisar('Selecione o texto e use Ctrl+C para copiar.') }
+}
+
+async function revogarSaude() {
+  try {
+    dados.value = await api.privacidade.revogarSaude()
+    revogando.value = false
+    ui.avisar('Consentimento de dados de saúde revogado. Não é possível enviar novas receitas nem fazer novos pedidos.', 'ok')
+    await carregar()
+  } catch (e) {
+    ui.erro(e)
+  }
+}
+
+function abrirSenha() {
+  senhas.value = { atual: '', nova: '', confirmar: '' }
+  errosSenha.value = []
+  trocandoSenha.value = true
+}
+
+async function alterarSenha() {
+  const e = []
+  if (!senhas.value.atual) e.push('Informe a senha atual.')
+  if (!senhaForte(senhas.value.nova)) e.push('A nova senha deve ter ao menos 8 caracteres, com letras e números.')
+  if (senhas.value.nova !== senhas.value.confirmar) e.push('A confirmação não é igual à nova senha.')
+  errosSenha.value = e
+  if (e.length) return
+  try {
+    await api.auth.alterarSenha(senhas.value.atual, senhas.value.nova)
+    trocandoSenha.value = false
+    ui.avisar('Senha alterada.', 'ok')
+  } catch (err) {
+    errosSenha.value = [err?.erros ? Object.values(err.erros).flat().join(' ') : err?.detail || 'Não foi possível alterar a senha.']
+  }
 }
 
 async function excluir() {
@@ -94,6 +133,13 @@ async function excluir() {
       <section class="card stack"><h3>Levar meus dados</h3>
         <p class="muted">Receba tudo o que guardamos sobre você em formato JSON: cadastro, consentimentos, receitas e pedidos (art. 18, II e V).</p>
         <div><button class="btn" type="button" @click="exportar">Baixar meus dados</button></div></section>
+      <section class="card stack"><h3>Consentimento de dados de saúde</h3>
+        <p class="muted">Você deu este consentimento ao enviar a receita (art. 11, I). Se revogar, não será possível enviar novas receitas nem fazer novos pedidos até consentir de novo. O que já foi entregue continua registrado por obrigação sanitária.</p>
+        <div v-if="saudeAtiva"><button class="btn" type="button" @click="revogando = true">Revogar consentimento de saúde</button></div>
+        <p v-else class="subtle">Nenhum consentimento de saúde ativo no momento.</p></section>
+      <section class="card stack"><h3>Senha</h3>
+        <p class="muted">Troque a senha se suspeitar que alguém a conhece. Você continua conectado neste aparelho.</p>
+        <div><button class="btn" type="button" @click="abrirSenha">Alterar senha</button></div></section>
       <section class="card stack" style="border-color: var(--bad)"><h3>Excluir minha conta</h3>
         <p class="muted">Seus dados pessoais são apagados e as receitas, removidas (art. 18, VI). Pedidos e movimentações de estoque ficam guardados sem identificar você, porque a rastreabilidade sanitária é obrigação legal (art. 16, I).</p>
         <div><button class="btn btn-perigo" type="button" @click="excluindo = true">Excluir minha conta</button></div></section>
@@ -104,6 +150,19 @@ async function excluir() {
     <p class="muted">A senha não aparece, nem mesmo como hash.</p>
     <pre class="json" tabindex="0">{{ json }}</pre>
     <template #rodape><button class="btn" type="button" @click="json = ''">Fechar</button><button class="btn btn-primario" type="button" @click="copiar"><Icone nome="copiar" />Copiar</button></template>
+  </ModalDialogo>
+  <ModalDialogo :aberto="revogando" titulo="Revogar consentimento de saúde?" @fechar="revogando = false">
+    <p>Depois de revogar, você não poderá enviar novas receitas nem confirmar novos pedidos. Pedidos em andamento seguem o fluxo normal. Você pode consentir de novo no próximo envio de receita.</p>
+    <template #rodape><button class="btn" type="button" @click="revogando = false">Voltar</button><button class="btn btn-perigo" type="button" @click="revogarSaude">Revogar consentimento</button></template>
+  </ModalDialogo>
+  <ModalDialogo :aberto="trocandoSenha" titulo="Alterar senha" @fechar="trocandoSenha = false">
+    <form id="form-senha" class="stack" novalidate @submit.prevent="alterarSenha">
+      <div class="campo"><label for="senha-atual">Senha atual</label><input id="senha-atual" v-model="senhas.atual" class="input" type="password" autocomplete="current-password" /></div>
+      <div class="campo"><label for="senha-nova">Nova senha</label><input id="senha-nova" v-model="senhas.nova" class="input" type="password" autocomplete="new-password" /><span class="ajuda">Mínimo de 8 caracteres, com letras e números.</span></div>
+      <div class="campo"><label for="senha-conf">Repita a nova senha</label><input id="senha-conf" v-model="senhas.confirmar" class="input" type="password" autocomplete="new-password" /></div>
+      <p v-for="e in errosSenha" :key="e" class="erro" role="alert" style="color: var(--bad); font-size: var(--t-sm)">{{ e }}</p>
+    </form>
+    <template #rodape><button class="btn" type="button" @click="trocandoSenha = false">Cancelar</button><button class="btn btn-primario" type="submit" form="form-senha">Alterar senha</button></template>
   </ModalDialogo>
   <ModalDialogo :aberto="excluindo" titulo="Excluir sua conta?" @fechar="excluindo = false">
     <p>Esta ação não pode ser desfeita. Se houver um pedido pendente, ele será cancelado e a reserva, liberada.</p>

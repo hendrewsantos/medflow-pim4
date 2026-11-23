@@ -63,7 +63,7 @@ export function criarServidor({ relogio } = {}) {
         senhaHash: await gerarHash(senha), perfil, endereco, telefone, criadoEm: iso(agora()), ativo: true,
         anonimizadoEm: null, falhasLogin: 0, bloqueadoAte: null, consentimentos: [],
       }
-      for (const tipo of consentimentos) u.consentimentos.push({ tipo, versaoTermo: '2026.1', concedidoEm: iso(agora()), revogadoEm: null })
+      for (const tipo of consentimentos) u.consentimentos.push({ tipo, versaoTermo: '1.0', concedidoEm: iso(agora()), revogadoEm: null })
       estado.usuarios.push(u)
       return u
     },
@@ -102,7 +102,7 @@ export function criarServidor({ relogio } = {}) {
       const p = usuario(pacienteId)
       if (ops.saudeRevogada(p)) throw R.erros.regra('Você revogou o consentimento para dados de saúde. Para enviar uma nova receita, dê o consentimento novamente.')
       if (!p.consentimentos.some((c) => c.tipo === 'DadosDeSaude' && !c.revogadoEm))
-        p.consentimentos.push({ tipo: 'DadosDeSaude', versaoTermo: '2026.1', concedidoEm: iso(agora()), revogadoEm: null })
+        p.consentimentos.push({ tipo: 'DadosDeSaude', versaoTermo: '1.0', concedidoEm: iso(agora()), revogadoEm: null })
       const r = { id: novoId('receita'), pacienteId, caminhoArquivo: `${crypto.randomUUID().replaceAll('-', '')}${nomeOriginal.slice(nomeOriginal.lastIndexOf('.'))}`,
         nomeOriginal, tipoConteudo, tamanhoBytes, enviadaEm: iso(agora()), status: 'Pendente', analisadaPorId: null, analisadaEm: null, validaAte: null, motivoRecusa: null, prescritorNome: null, prescritorCrm: null, dataEmissao: null, previewUrl, exemplo }
       estado.receitas.push(r)
