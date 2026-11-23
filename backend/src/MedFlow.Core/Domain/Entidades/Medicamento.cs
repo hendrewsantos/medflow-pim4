@@ -39,6 +39,8 @@ public sealed class Medicamento : Entidade
     /// <summary>Termolábeis exigem embalagem e transporte especiais e ficam fora da Box.</summary>
     public bool Termolabil { get; private set; }
     public int NivelMinimo { get; private set; }
+    /// <summary>Preço fictício por unidade (R$), usado só na demonstração do pagamento simulado.</summary>
+    public decimal PrecoUnitario { get; private set; }
     public bool Ativo { get; private set; }
     public IReadOnlyCollection<Lote> Lotes => _lotes;
 
@@ -68,6 +70,12 @@ public sealed class Medicamento : Entidade
         Tarja = tarja;
         ControleEspecial = controleEspecial;
         NivelMinimo = nivelMinimo;
+    }
+
+    public void DefinirPreco(decimal precoUnitario)
+    {
+        if (precoUnitario < 0) throw new DomainException("O preço não pode ser negativo.");
+        PrecoUnitario = decimal.Round(precoUnitario, 2);
     }
 
     public Lote RegistrarEntrada(string numero, DateTime fabricacao, DateTime validade, int quantidade, DateTime agora)

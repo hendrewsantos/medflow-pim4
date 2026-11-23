@@ -33,7 +33,7 @@ public sealed record MedicamentoRequest(string Nome, string PrincipioAtivo, stri
 public sealed record LoteDto(int Id, string Numero, DateTime Fabricacao, DateTime Validade, int QuantidadeFisica, int QuantidadeReservada, int Disponivel, bool Vencido);
 public sealed record MedicamentoDto(int Id, string Nome, string PrincipioAtivo, string Concentracao, string FormaFarmaceutica, Tarja Tarja,
     bool ControleEspecial, int NivelMinimo, int QuantidadeFisica, int QuantidadeReservada, int DisponivelParaCiclo, bool AbaixoDoMinimo,
-    IReadOnlyList<LoteDto> Lotes, CategoriaRegulatoria Categoria = CategoriaRegulatoria.Comum, bool Termolabil = false);
+    IReadOnlyList<LoteDto> Lotes, CategoriaRegulatoria Categoria = CategoriaRegulatoria.Comum, bool Termolabil = false, decimal PrecoUnitario = 0);
 public sealed record EntradaLoteRequest(string Numero, DateTime Fabricacao, DateTime Validade, int Quantidade);
 public sealed record MovimentacaoDto(int Id, string Medicamento, string Lote, TipoMovimentacao Tipo, int Quantidade, int? PedidoId, DateTime Em, string Observacao);
 public sealed record AlertaDto(string Tipo, string Medicamento, string Mensagem, string Severidade);
@@ -47,9 +47,10 @@ public sealed record AlocacaoDto(string Lote, DateTime Validade, int Quantidade)
 public sealed record PedidoItemDto(int MedicamentoId, string Medicamento, int Quantidade, IReadOnlyList<string> Horarios, int DosePorHorario, IReadOnlyList<AlocacaoDto> Lotes);
 public sealed record HistoricoDto(StatusPedido? De, StatusPedido Para, DateTime Em, string? Observacao);
 public sealed record EntregaDto(int Tentativa, int EntregadorId, DateTime IniciadaEm, DateTime? ConcluidaEm, ResultadoEntrega Resultado, string? Recebedor, string? Ocorrencia);
-public sealed record PedidoResumoDto(int Id, string Paciente, StatusPedido Status, DateTime CriadoEm, DateTime AtualizadoEm, int TotalItens);
+public sealed record PedidoResumoDto(int Id, string Paciente, StatusPedido Status, DateTime CriadoEm, DateTime AtualizadoEm, int TotalItens, decimal ValorTotal = 0, DateTime? PagamentoPrazoEm = null);
 public sealed record PedidoDto(int Id, int PacienteId, string Paciente, int ReceitaId, StatusPedido Status, string EnderecoEntrega, int DiasCiclo,
-    DateTime CriadoEm, DateTime AtualizadoEm, IReadOnlyList<PedidoItemDto> Itens, IReadOnlyList<HistoricoDto> Historico, IReadOnlyList<EntregaDto> Entregas);
+    DateTime CriadoEm, DateTime AtualizadoEm, IReadOnlyList<PedidoItemDto> Itens, IReadOnlyList<HistoricoDto> Historico, IReadOnlyList<EntregaDto> Entregas,
+    decimal ValorMedicamentos = 0, decimal ValorEntrega = 0, DateTime? PagamentoPrazoEm = null, DateTime? PagoEm = null);
 /// <summary>RN13 — o entregador recebe apenas o necessário para entregar (sem medicamentos, lotes ou receita).</summary>
 public sealed record EntregaResumoDto(int PedidoId, string Codigo, string Paciente, string Endereco, string? Telefone, int TotalSaches, StatusPedido Status, int Tentativa);
 public sealed record ConfirmarEntregaRequest(string Recebedor);

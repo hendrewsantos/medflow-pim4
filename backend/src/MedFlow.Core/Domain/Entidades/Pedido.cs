@@ -13,6 +13,7 @@ public sealed class Pedido : Entidade
 
     private static readonly IReadOnlyDictionary<StatusPedido, StatusPedido[]> Transicoes = new Dictionary<StatusPedido, StatusPedido[]>
     {
+        [StatusPedido.AguardandoPagamento] = new[] { StatusPedido.Pendente, StatusPedido.EmSeparacao, StatusPedido.Recusado, StatusPedido.Cancelado },
         [StatusPedido.Pendente] = new[] { StatusPedido.EmSeparacao, StatusPedido.Recusado, StatusPedido.Cancelado },
         [StatusPedido.EmSeparacao] = new[] { StatusPedido.AguardandoEntregador },
         [StatusPedido.AguardandoEntregador] = new[] { StatusPedido.EmRota },
@@ -28,7 +29,7 @@ public sealed class Pedido : Entidade
 
     private Pedido() { }
 
-    public Pedido(int pacienteId, Tratamento tratamento, int receitaId, string enderecoEntrega, DateTime agora, int diasCiclo = DiasCicloPadrao)
+    public Pedido(int pacienteId, Tratamento tratamento, int receitaId, string enderecoEntrega, DateTime agora, int diasCiclo = DiasCicloPadrao, CondicaoPagamento? pagamento = null)
     {
         if (string.IsNullOrWhiteSpace(enderecoEntrega) || enderecoEntrega.Trim().Length < 10)
             throw new DomainException("Informe o endereço completo de entrega.");
@@ -40,8 +41,19 @@ public sealed class Pedido : Entidade
         DiasCiclo = diasCiclo;
         CriadoEm = agora;
         AtualizadoEm = agora;
-        Status = StatusPedido.Pendente;
-        _historico.Add(new HistoricoPedido(null, StatusPedido.Pendente, pacienteId, agora, "Pedido confirmado e estoque reservado."));
+        if (pagamento is null)
+        {
+            Status = StatusPedido.Pendente;
+            _historico.Add(new HistoricoPedido(null, StatusPedido.Pendente, pacienteId, agora, "Pedido confirmado e estoque reservado."));
+        }
+        else
+        {
+            ValorMedicamentos = pagamento.ValorMedicamentos;
+            ValorEntrega = pagamento.ValorEntrega;
+            PagamentoPrazoEm = agora.AddMinutes(pagamento.PrazoMinutos);
+            Status = StatusPedido.AguardandoPagamento;
+            _historico.Add(new HistoricoPedido(null, StatusPedido.AguardandoPagamento, pacienteId, agora, $"Pedido confirmado e estoque reservado. Aguardando o pagamento por {pagamento.PrazoMinutos} min."));
+        }
     }
 
     public int PacienteId { get; private set; }
@@ -54,6 +66,12 @@ public sealed class Pedido : Entidade
     public int DiasCiclo { get; private set; }
     public DateTime CriadoEm { get; private set; }
     public DateTime AtualizadoEm { get; private set; }
+    public decimal ValorMedicamentos { get; private set; }
+    public decimal ValorEntrega { get; private set; }
+    public decimal ValorTotal => ValorMedicamentos + ValorEntrega;
+    /// <summary>Limite para o pagamento simulado; depois dele a reserva volta ao estoque.</summary>
+    public DateTime? PagamentoPrazoEm { get; private set; }
+    public DateTime? PagoEm { get; private set; }
     public IReadOnlyCollection<PedidoItem> Itens => _itens;
     public IReadOnlyCollection<HistoricoPedido> Historico => _historico;
     public IReadOnlyCollection<Entrega> Entregas => _entregas;
@@ -72,6 +90,29 @@ public sealed class Pedido : Entidade
         _itens.Add(item);
     }
 
+    /// <summary>Pagamento aprovado (simulado): segue para separação se a receita já está aprovada, senão aguarda a análise.</summary>
+    public void RegistrarPagamento(int pacienteId, bool receitaAprovada, DateTime agora)
+    {
+        if (pacienteId != PacienteId) throw new OperacaoNaoAutorizadaException("Somente o titular paga este pedido.");
+        if (Status != StatusPedido.AguardandoPagamento) throw new TransicaoInvalidaException("Este pedido não está aguardando pagamento.");
+        if (PagamentoPrazoEm is { } prazo && agora > prazo) throw new DomainException("O prazo de pagamento acabou.");
+        PagoEm = agora;
+        MudarStatus(receitaAprovada ? StatusPedido.EmSeparacao : StatusPedido.Pendente, pacienteId, agora,
+            receitaAprovada ? "Pagamento aprovado (simulado). Receita já aprovada: segue para separação." : "Pagamento aprovado (simulado). Aguardando a análise da receita.");
+    }
+
+    /// <summary>Prazo do pagamento vencido: o pedido é cancelado e a reserva volta ao saldo.</summary>
+    public IReadOnlyList<MovimentacaoEstoque> ExpirarPagamento(DateTime agora, string observacao = "Pagamento não confirmado dentro do prazo. Pedido cancelado e reserva liberada.")
+    {
+        GarantirTransicao(StatusPedido.Cancelado);
+        if (Status != StatusPedido.AguardandoPagamento) throw new TransicaoInvalidaException("Este pedido não está aguardando pagamento.");
+        var movimentacoes = LiberarReservas(null, agora, "Reserva liberada: pagamento não confirmado.");
+        MudarStatus(StatusPedido.Cancelado, null, agora, observacao);
+        return movimentacoes;
+    }
+
+    public bool PagamentoVencido(DateTime agora) => Status == StatusPedido.AguardandoPagamento && PagamentoPrazoEm is { } p && agora > p;
+
     /// <summary>Chamado quando o farmacêutico aprova a receita (ou quando a receita já estava aprovada).</summary>
     public void IniciarSeparacao(int? farmaceuticoId, DateTime agora, string observacao = "Receita aprovada pelo farmacêutico.")
         => MudarStatus(StatusPedido.EmSeparacao, farmaceuticoId, agora, observacao);
@@ -85,7 +126,7 @@ public sealed class Pedido : Entidade
         return movimentacoes;
     }
 
-    /// <summary>RN07 — o paciente só cancela enquanto o pedido está Pendente.</summary>
+    /// <summary>RN07 — o paciente só cancela enquanto o pedido está Pendente ou aguardando pagamento.</summary>
     public IReadOnlyList<MovimentacaoEstoque> Cancelar(int pacienteId, DateTime agora)
     {
         if (pacienteId != PacienteId) throw new OperacaoNaoAutorizadaException("Somente o titular pode cancelar este pedido.");
@@ -175,6 +216,9 @@ public sealed class Pedido : Entidade
         AtualizadoEm = agora;
     }
 }
+
+/// <summary>Condições do pagamento simulado, calculadas na confirmação.</summary>
+public sealed record CondicaoPagamento(decimal ValorMedicamentos, decimal ValorEntrega, int PrazoMinutos);
 
 public sealed class PedidoItem : Entidade
 {

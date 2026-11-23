@@ -50,14 +50,14 @@ internal static class Mapeamentos
             m.QuantidadeFisica, m.QuantidadeReservada, m.DisponivelAte(validoAte), m.AbaixoDoMinimo(hoje),
             m.Lotes.OrderBy(l => l.Validade)
                 .Select(l => new LoteDto(l.Id, l.Numero, l.Fabricacao, l.Validade, l.QuantidadeFisica, l.QuantidadeReservada, l.Disponivel, l.Vencido(hoje)))
-                .ToList(), m.Categoria, m.Termolabil);
+                .ToList(), m.Categoria, m.Termolabil, m.PrecoUnitario);
 
     public static EntregaResumoDto ParaEntregaResumo(this Pedido p) =>
         new(p.Id, $"BOX-{p.Id:D6}", p.Paciente?.Nome ?? "—", p.EnderecoEntrega, p.Paciente?.Telefone,
             p.Tratamento?.Saches.Count ?? 0, p.Status, p.Entregas.Count);
 
     public static PedidoResumoDto ParaResumo(this Pedido p) =>
-        new(p.Id, p.Paciente?.Nome ?? "—", p.Status, p.CriadoEm, p.AtualizadoEm, p.Itens.Count);
+        new(p.Id, p.Paciente?.Nome ?? "—", p.Status, p.CriadoEm, p.AtualizadoEm, p.Itens.Count, p.ValorTotal, p.PagamentoPrazoEm);
 
     public static PedidoDto ParaDto(this Pedido p)
     {
@@ -77,7 +77,8 @@ internal static class Mapeamentos
         return new PedidoDto(p.Id, p.PacienteId, p.Paciente?.Nome ?? "—", p.ReceitaId, p.Status, p.EnderecoEntrega, p.DiasCiclo,
             p.CriadoEm, p.AtualizadoEm, itens,
             p.Historico.OrderBy(h => h.Em).ThenBy(h => h.Id).Select(h => new HistoricoDto(h.De, h.Para, h.Em, h.Observacao)).ToList(),
-            p.Entregas.OrderBy(e => e.Tentativa).Select(e => new EntregaDto(e.Tentativa, e.EntregadorId, e.IniciadaEm, e.ConcluidaEm, e.Resultado, e.Recebedor, e.Ocorrencia)).ToList());
+            p.Entregas.OrderBy(e => e.Tentativa).Select(e => new EntregaDto(e.Tentativa, e.EntregadorId, e.IniciadaEm, e.ConcluidaEm, e.Resultado, e.Recebedor, e.Ocorrencia)).ToList(),
+            p.ValorMedicamentos, p.ValorEntrega, p.PagamentoPrazoEm, p.PagoEm);
     }
 }
 

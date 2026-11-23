@@ -243,6 +243,10 @@ namespace MedFlow.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("varchar(150)");
 
+                    b.Property<decimal>("PrecoUnitario")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
                     b.Property<string>("PrincipioAtivo")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -330,6 +334,12 @@ namespace MedFlow.Infrastructure.Migrations
                     b.Property<int>("PacienteId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("PagamentoPrazoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("PagoEm")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int>("ReceitaId")
                         .HasColumnType("int");
 
@@ -340,6 +350,14 @@ namespace MedFlow.Infrastructure.Migrations
 
                     b.Property<int>("TratamentoId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("ValorEntrega")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("ValorMedicamentos")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
 
                     b.HasKey("Id");
 

@@ -11,7 +11,13 @@ namespace MedFlow.Api.Controllers;
 public sealed class PedidosController : BaseController
 {
     private readonly PedidoService _pedidos;
-    public PedidosController(PedidoService pedidos) => _pedidos = pedidos;
+    private readonly bool _botoesDePagamento;
+
+    public PedidosController(PedidoService pedidos, IConfiguration configuracao)
+    {
+        _pedidos = pedidos;
+        _botoesDePagamento = configuracao.GetValue<bool>("Demo:BotoesDePagamento");
+    }
 
     /// <summary>Confere a disponibilidade da Box antes de confirmar (não reserva).</summary>
     [HttpPost("simular")]
@@ -46,6 +52,18 @@ public sealed class PedidosController : BaseController
     [HttpPost("{id:int}/cancelar")]
     [Authorize(Policy = Politicas.Paciente)]
     public async Task<ActionResult<PedidoDto>> Cancelar(int id, CancellationToken ct) => Ok(await _pedidos.CancelarAsync(Logado, id, ct));
+
+    /// <summary>Pagamento simulado aprovado. Existe só na demonstração (Demo:BotoesDePagamento); fora dela responde 404.</summary>
+    [HttpPost("{id:int}/pagamento/aprovar")]
+    [Authorize(Policy = Politicas.Paciente)]
+    public async Task<ActionResult<PedidoDto>> AprovarPagamento(int id, CancellationToken ct) =>
+        _botoesDePagamento ? Ok(await _pedidos.AprovarPagamentoAsync(Logado, id, ct)) : NotFound();
+
+    /// <summary>Expiração do prazo forçada, para demonstrar a liberação da reserva. Só na demonstração.</summary>
+    [HttpPost("{id:int}/pagamento/expirar")]
+    [Authorize(Policy = Politicas.Paciente)]
+    public async Task<ActionResult<PedidoDto>> SimularExpiracao(int id, CancellationToken ct) =>
+        _botoesDePagamento ? Ok(await _pedidos.SimularExpiracaoAsync(Logado, id, ct)) : NotFound();
 
     /// <summary>UC07 — Box separada fisicamente: baixa definitiva no estoque.</summary>
     [HttpPost("{id:int}/finalizar-box")]

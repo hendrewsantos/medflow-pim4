@@ -73,7 +73,7 @@ public sealed class PrivacidadeService
         var usuario = await _db.Usuarios.Include(x => x.Consentimentos).FirstOrDefaultAsync(x => x.Id == u.Id && x.Ativo, ct)
             ?? throw new NaoEncontradoException("Usuário");
 
-        var pendentes = await _db.PedidosCompletos().Where(p => p.PacienteId == u.Id && p.Status == StatusPedido.Pendente).ToListAsync(ct);
+        var pendentes = await _db.PedidosCompletos().Where(p => p.PacienteId == u.Id && (p.Status == StatusPedido.Pendente || p.Status == StatusPedido.AguardandoPagamento)).ToListAsync(ct);
         foreach (var pedido in pendentes) _db.Movimentacoes.AddRange(pedido.Cancelar(u.Id, agora));
 
         var receitas = await _db.Receitas.Where(r => r.PacienteId == u.Id).ToListAsync(ct);

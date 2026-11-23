@@ -119,7 +119,7 @@ public sealed class ReceitaService
         var receita = await _db.Receitas.Include(x => x.Paciente).FirstOrDefaultAsync(x => x.Id == id, ct) ?? throw new NaoEncontradoException("Receita");
         receita.Recusar(u.Id, r.Motivo, agora);
 
-        var pedidos = await _db.PedidosCompletos().Where(p => p.ReceitaId == id && p.Status == StatusPedido.Pendente).ToListAsync(ct);
+        var pedidos = await _db.PedidosCompletos().Where(p => p.ReceitaId == id && (p.Status == StatusPedido.Pendente || p.Status == StatusPedido.AguardandoPagamento)).ToListAsync(ct);
         foreach (var pedido in pedidos)
             _db.Movimentacoes.AddRange(pedido.Recusar(u.Id, $"Receita recusada: {r.Motivo.Trim()}", agora));
 

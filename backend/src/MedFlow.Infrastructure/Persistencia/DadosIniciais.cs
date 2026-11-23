@@ -75,6 +75,7 @@ public static class DadosIniciais
 
         var medicamentos = new[] { amoxicilina, insulina, losartana, metformina, sinvastatina, aas, omeprazol, levotiroxina, atenolol, hidroclorotiazida, anlodipino, clonazepam }
             .Concat(CatalogoAdicional.Criar(hoje, agora)).ToArray();
+        foreach (var m in medicamentos) m.DefinirPreco(CatalogoAdicional.PrecoDe(m.PrincipioAtivo));
         db.Medicamentos.AddRange(medicamentos);
         await db.SaveChangesAsync(ct);
 

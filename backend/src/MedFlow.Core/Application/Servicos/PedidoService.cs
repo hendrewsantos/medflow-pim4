@@ -17,11 +17,13 @@ public sealed class PedidoService
 {
     private readonly IAppDbContext _db;
     private readonly IRelogio _relogio;
+    private readonly PagamentoOpcoes _pagamento;
 
-    public PedidoService(IAppDbContext db, IRelogio relogio)
+    public PedidoService(IAppDbContext db, IRelogio relogio, PagamentoOpcoes? pagamento = null)
     {
         _db = db;
         _relogio = relogio;
+        _pagamento = pagamento ?? new PagamentoOpcoes();
     }
 
     /// <summary>Mostra se o estoque atende a Box antes da confirmação — não reserva nada.</summary>
@@ -55,15 +57,21 @@ public sealed class PedidoService
 
         if (!receita.PodeSerUsadaEm(agora)) throw new DomainException("A receita informada foi recusada ou está vencida. Envie uma nova receita (RN02).");
 
-        if (await _db.Pedidos.AnyAsync(p => p.PacienteId == u.Id && (p.Status == StatusPedido.Pendente || p.Status == StatusPedido.EmSeparacao), ct))
+        if (await _db.Pedidos.AnyAsync(p => p.PacienteId == u.Id && (p.Status == StatusPedido.AguardandoPagamento || p.Status == StatusPedido.Pendente || p.Status == StatusPedido.EmSeparacao), ct))
             throw new ConflitoException("Você já tem uma Box em preparação. Aguarde a finalização ou cancele o pedido pendente.");
 
         var (tratamento, necessidades, medicamentos) = await MontarTratamentoAsync(u.Id, receita.Id, r.Itens, ct);
-        var pedido = new Pedido(u.Id, tratamento, receita.Id, r.EnderecoEntrega, agora);
+        CondicaoPagamento? condicao = null;
+        if (_pagamento.Habilitado)
+        {
+            var valor = necessidades.Sum(n => n.Quantidade * medicamentos.First(m => m.Id == n.MedicamentoId).PrecoUnitario);
+            condicao = new CondicaoPagamento(decimal.Round(valor, 2), _pagamento.TaxaEntrega, _pagamento.PrazoMinutos);
+        }
+        var pedido = new Pedido(u.Id, tratamento, receita.Id, r.EnderecoEntrega, agora, Pedido.DiasCicloPadrao, condicao);
         var movimentacoes = ReservaEstoqueFefo.Reservar(pedido, necessidades, medicamentos, u.Id, agora);
 
-        // Fluxo de renovação: receita já aprovada e válida dispensa nova análise.
-        if (receita.Status == StatusReceita.Aprovada)
+        // Fluxo de renovação: receita já aprovada e válida dispensa nova análise (com pagamento habilitado, a separação começa após pagar).
+        if (condicao is null && receita.Status == StatusReceita.Aprovada)
             pedido.IniciarSeparacao(null, agora, "Receita já aprovada e dentro da validade: pedido segue direto para separação.");
 
         _db.Tratamentos.Add(tratamento);
@@ -76,6 +84,7 @@ public sealed class PedidoService
 
     public async Task<IReadOnlyList<PedidoResumoDto>> ListarMeusAsync(UsuarioLogado u, CancellationToken ct = default)
     {
+        await ExpirarVencidosAsync(ct);
         var pedidos = await _db.Pedidos.Include(p => p.Paciente).Include(p => p.Itens)
             .Where(p => p.PacienteId == u.Id).OrderByDescending(p => p.CriadoEm).ToListAsync(ct);
         return pedidos.Select(p => p.ParaResumo()).ToList();
@@ -92,6 +101,7 @@ public sealed class PedidoService
 
     public async Task<PedidoDto> ObterAsync(UsuarioLogado u, int id, CancellationToken ct = default)
     {
+        await ExpirarVencidosAsync(ct);
         var pedido = await _db.PedidosCompletos().FirstOrDefaultAsync(p => p.Id == id, ct) ?? throw new NaoEncontradoException("Pedido");
         // RN13: o entregador não acessa o detalhe do pedido (medicamentos, lotes); usa as rotas /api/entregas.
         var podeVer = u.EhEquipe || pedido.PacienteId == u.Id;
@@ -113,6 +123,39 @@ public sealed class PedidoService
         var receita = await _db.Receitas.FirstOrDefaultAsync(x => x.Id == ultimo.ReceitaId, ct);
         var validaAte = receita?.ValidaAte;
         return new ProximaRenovacaoDto(true, fim, (int)(fim - hoje).TotalDays, validaAte, validaAte.HasValue && validaAte.Value.Date < fim);
+    }
+
+    /// <summary>Pagamento simulado aprovado: segue para separação (receita aprovada) ou para a análise da receita.</summary>
+    public async Task<PedidoDto> AprovarPagamentoAsync(UsuarioLogado u, int id, CancellationToken ct = default)
+    {
+        if (u.Perfil != PerfilUsuario.Paciente) throw new AcessoNegadoException("Somente o paciente paga o próprio pedido.");
+        await ExpirarVencidosAsync(ct);
+        var pedido = await _db.PedidosCompletos().FirstOrDefaultAsync(p => p.Id == id, ct) ?? throw new NaoEncontradoException("Pedido");
+        var receita = await _db.Receitas.FirstAsync(x => x.Id == pedido.ReceitaId, ct);
+        pedido.RegistrarPagamento(u.Id, receita.Status == StatusReceita.Aprovada, _relogio.Agora);
+        await _db.SalvarAsync(ct);
+        return pedido.ParaDto();
+    }
+
+    /// <summary>Somente demonstração: força o vencimento do prazo para mostrar o cancelamento e a liberação da reserva.</summary>
+    public async Task<PedidoDto> SimularExpiracaoAsync(UsuarioLogado u, int id, CancellationToken ct = default)
+    {
+        if (u.Perfil != PerfilUsuario.Paciente) throw new AcessoNegadoException();
+        var pedido = await _db.PedidosCompletos().FirstOrDefaultAsync(p => p.Id == id, ct) ?? throw new NaoEncontradoException("Pedido");
+        if (pedido.PacienteId != u.Id) throw new AcessoNegadoException();
+        _db.Movimentacoes.AddRange(pedido.ExpirarPagamento(_relogio.Agora, "Expiração do pagamento simulada (demonstração). Pedido cancelado e reserva liberada."));
+        await _db.SalvarAsync(ct);
+        return pedido.ParaDto();
+    }
+
+    /// <summary>Cancela os pedidos cujo prazo de pagamento venceu e devolve a reserva ao estoque.</summary>
+    public async Task<int> ExpirarVencidosAsync(CancellationToken ct = default)
+    {
+        var agora = _relogio.Agora;
+        var vencidos = await _db.PedidosCompletos().Where(p => p.Status == StatusPedido.AguardandoPagamento && p.PagamentoPrazoEm != null && p.PagamentoPrazoEm < agora).ToListAsync(ct);
+        foreach (var pedido in vencidos) _db.Movimentacoes.AddRange(pedido.ExpirarPagamento(agora));
+        if (vencidos.Count > 0) await _db.SalvarAsync(ct);
+        return vencidos.Count;
     }
 
     public async Task<PedidoDto> CancelarAsync(UsuarioLogado u, int id, CancellationToken ct = default)
@@ -154,4 +197,12 @@ public sealed class PedidoService
         }
         return (tratamento, tratamento.NecessidadesDoCiclo(Pedido.DiasCicloPadrao), medicamentos);
     }
+}
+
+/// <summary>Pagamento simulado: desligado por padrão; a API de demonstração liga em appsettings (Pagamento:Habilitado).</summary>
+public sealed class PagamentoOpcoes
+{
+    public bool Habilitado { get; set; }
+    public int PrazoMinutos { get; set; } = 30;
+    public decimal TaxaEntrega { get; set; } = 9.90m;
 }

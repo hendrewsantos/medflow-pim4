@@ -58,6 +58,7 @@ internal sealed class MedicamentoConfig : IEntityTypeConfiguration<Medicamento>
     {
         b.ToTable("medicamentos");
         b.Property(x => x.Categoria).HasConversion<string>().HasMaxLength(30);
+        b.Property(x => x.PrecoUnitario).HasPrecision(10, 2);
         b.Property(x => x.Nome).HasMaxLength(150).IsRequired();
         b.Property(x => x.PrincipioAtivo).HasMaxLength(150).IsRequired();
         b.Property(x => x.Concentracao).HasMaxLength(50).IsRequired();
@@ -114,6 +115,9 @@ internal sealed class PedidoConfig : IEntityTypeConfiguration<Pedido>
         b.Property(x => x.Status).HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.EnderecoEntrega).HasMaxLength(255).IsRequired();
         b.Ignore(x => x.ValidoAte);
+        b.Ignore(x => x.ValorTotal);
+        b.Property(x => x.ValorMedicamentos).HasPrecision(10, 2);
+        b.Property(x => x.ValorEntrega).HasPrecision(10, 2);
         b.Ignore(x => x.EntregaAtual);
         b.HasOne(x => x.Paciente).WithMany().HasForeignKey(x => x.PacienteId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.Tratamento).WithMany().HasForeignKey(x => x.TratamentoId).OnDelete(DeleteBehavior.Restrict);

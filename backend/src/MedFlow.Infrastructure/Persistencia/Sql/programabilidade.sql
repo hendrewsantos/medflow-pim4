@@ -183,6 +183,7 @@ END$$
 CREATE TRIGGER trg_pedidos_valida_transicao BEFORE UPDATE ON pedidos FOR EACH ROW
 BEGIN
   IF NEW.Status <> OLD.Status AND NOT (
+       (OLD.Status = 'AguardandoPagamento'  AND NEW.Status IN ('Pendente', 'EmSeparacao', 'Recusado', 'Cancelado')) OR
        (OLD.Status = 'Pendente'             AND NEW.Status IN ('EmSeparacao', 'Recusado', 'Cancelado')) OR
        (OLD.Status = 'EmSeparacao'          AND NEW.Status = 'AguardandoEntregador') OR
        (OLD.Status = 'AguardandoEntregador' AND NEW.Status = 'EmRota') OR

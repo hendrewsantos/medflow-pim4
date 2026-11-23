@@ -80,6 +80,93 @@ internal static class CatalogoAdicional
         ("Insulina regular", "insulina humana regular", "100 UI/mL", "frasco-ampola", Tarja.Vermelha, 15, "tl", 120),
     };
 
+    private static readonly Dictionary<string, decimal> Precos = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["losartana potássica"] = 0.32m,
+        ["cloridrato de metformina"] = 0.28m,
+        ["sinvastatina"] = 0.35m,
+        ["ácido acetilsalicílico"] = 0.12m,
+        ["omeprazol"] = 0.45m,
+        ["levotiroxina sódica"] = 0.60m,
+        ["atenolol"] = 0.25m,
+        ["hidroclorotiazida"] = 0.20m,
+        ["besilato de anlodipino"] = 0.30m,
+        ["clonazepam"] = 1.20m,
+        ["amoxicilina"] = 1.10m,
+        ["insulina humana"] = 62.00m,
+        ["amoxicilina tri-hidratada"] = 1.10m,
+        ["insulina humana nph"] = 62.00m,
+        ["maleato de enalapril"] = 0.22m,
+        ["captopril"] = 0.18m,
+        ["ramipril"] = 0.55m,
+        ["lisinopril"] = 0.40m,
+        ["valsartana"] = 0.90m,
+        ["olmesartana medoxomila"] = 1.20m,
+        ["candesartana cilexetila"] = 1.10m,
+        ["carvedilol"] = 0.50m,
+        ["succinato de metoprolol"] = 0.65m,
+        ["cloridrato de propranolol"] = 0.20m,
+        ["fumarato de bisoprolol"] = 0.70m,
+        ["espironolactona"] = 0.45m,
+        ["clortalidona"] = 0.40m,
+        ["indapamida"] = 0.55m,
+        ["furosemida"] = 0.15m,
+        ["cloridrato de hidralazina"] = 0.60m,
+        ["cloridrato de metformina de liberação prolongada"] = 0.45m,
+        ["glibenclamida"] = 0.18m,
+        ["gliclazida de liberação modificada"] = 0.85m,
+        ["glimepirida"] = 0.50m,
+        ["cloridrato de pioglitazona"] = 0.95m,
+        ["fosfato de sitagliptina"] = 4.50m,
+        ["vildagliptina"] = 4.20m,
+        ["linagliptina"] = 6.00m,
+        ["propanodiol de dapagliflozina"] = 5.20m,
+        ["empagliflozina"] = 6.50m,
+        ["atorvastatina cálcica"] = 0.90m,
+        ["rosuvastatina cálcica"] = 1.10m,
+        ["pravastatina sódica"] = 0.60m,
+        ["ezetimiba"] = 1.40m,
+        ["fenofibrato"] = 1.20m,
+        ["genfibrozila"] = 0.80m,
+        ["metimazol"] = 0.50m,
+        ["propiltiouracila"] = 0.70m,
+        ["pantoprazol sódico"] = 0.70m,
+        ["esomeprazol magnésico"] = 1.30m,
+        ["lansoprazol"] = 0.95m,
+        ["domperidona"] = 0.40m,
+        ["sucralfato"] = 0.90m,
+        ["cloridrato de metoclopramida"] = 0.15m,
+        ["colecalciferol"] = 0.90m,
+        ["ácido fólico"] = 0.20m,
+        ["cianocobalamina"] = 0.50m,
+        ["carbonato de cálcio + colecalciferol"] = 0.70m,
+        ["sulfato ferroso"] = 0.25m,
+        ["cloreto de potássio"] = 0.55m,
+        ["bissulfato de clopidogrel"] = 1.40m,
+        ["varfarina sódica"] = 0.45m,
+        ["mononitrato de isossorbida"] = 0.50m,
+        ["cloridrato de amiodarona"] = 0.65m,
+        ["alopurinol"] = 0.20m,
+        ["finasterida"] = 0.60m,
+        ["cloridrato de tansulosina"] = 0.80m,
+        ["loratadina"] = 0.30m,
+        ["montelucaste de sódio"] = 1.50m,
+        ["gabapentina"] = 0.75m,
+        ["carbamazepina"] = 0.30m,
+        ["cloridrato de donepezila"] = 1.60m,
+        ["paracetamol"] = 0.25m,
+        ["dipirona sódica"] = 0.20m,
+        ["cloridrato de sertralina"] = 0.90m,
+        ["cloridrato de fluoxetina"] = 0.45m,
+        ["hemitartarato de zolpidem"] = 1.80m,
+        ["azitromicina di-hidratada"] = 3.20m,
+        ["cefalexina monoidratada"] = 1.60m,
+        ["insulina humana regular"] = 64.00m,
+    };
+
+    /// <summary>Preço fictício por unidade (R$) para o pagamento simulado.</summary>
+    public static decimal PrecoDe(string principioAtivo) => Precos.TryGetValue(principioAtivo, out var p) ? p : 0.60m;
+
     public static List<Medicamento> Criar(DateTime hoje, DateTime agora)
     {
         var lista = new List<Medicamento>();
@@ -91,6 +178,7 @@ internal static class CatalogoAdicional
             var m = new Medicamento(i.Nome, i.Principio, i.Concentracao, i.Forma, i.Tarja, controle, i.Minimo, categoria, termolabil: i.Flag == "tl");
             seq++;
             m.RegistrarEntrada($"CAT{seq:000}", hoje.AddMonths(-2), hoje.AddMonths(12), i.Quantidade, agora);
+            m.DefinirPreco(PrecoDe(i.Principio));
             lista.Add(m);
         }
         return lista;

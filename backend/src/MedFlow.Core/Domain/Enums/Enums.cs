@@ -21,7 +21,9 @@ public enum StatusPedido
     EmRota = 4,
     Entregue = 5,
     Cancelado = 6,
-    Recusado = 7
+    Recusado = 7,
+    /// <summary>Pagamento simulado: estoque já reservado, aguardando a confirmação dentro do prazo.</summary>
+    AguardandoPagamento = 8
 }
 
 public enum TipoMovimentacao { Entrada = 1, Reserva = 2, LiberacaoReserva = 3, Baixa = 4 }
