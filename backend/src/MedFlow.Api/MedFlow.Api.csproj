@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup>  <UserSecretsId>206d3a67-9717-406a-ad52-534608c21e83</UserSecretsId>
+  </PropertyGroup>
+  <!-- Camada de Apresentação: API REST (controllers finos), autenticação JWT, CORS, limitação de taxa e Swagger. -->
+  <ItemGroup>
+    <ProjectReference Include="..\MedFlow.Core\MedFlow.Core.csproj" />
+    <ProjectReference Include="..\MedFlow.Infrastructure\MedFlow.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+</Project>
+

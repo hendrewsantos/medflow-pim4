@@ -1,0 +1,8 @@
+bin/
+obj/
+node_modules/
+.vs/
+*.user
+.env
+.env.local
+backend/src/MedFlow.Api/storage/
