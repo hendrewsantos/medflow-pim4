@@ -3,6 +3,7 @@
 // Assim estoque, histórico e indicadores ficam sempre coerentes entre si.
 
 import { somarDias, somarHoras, somarMeses } from '../../domain/regras.js'
+import { CATALOGO_EXTRA } from '../../domain/catalogo.js'
 import { criarServidor } from './servidor.js'
 
 export const SENHA_DEMO = 'MedFlow2026'
@@ -68,6 +69,12 @@ export async function criarDemonstracao(agoraReal = new Date()) {
   const amoxicilina = med('Amoxicilina', 'amoxicilina tri-hidratada', '500 mg', 'cápsula', 'Vermelha', 40, false, { categoria: 'Antimicrobiano' })
   const insulina = med('Insulina NPH', 'insulina humana NPH', '100 UI/mL', 'frasco-ampola', 'Vermelha', 20, false, { termolabil: true })
 
+  // Catálogo ampliado: itens de uso contínuo com lote único e saldo folgado (não geram alerta).
+  const extras = CATALOGO_EXTRA.map((x) => {
+    const extra = x.flag === 'am' ? { categoria: 'Antimicrobiano' } : x.flag === 'tl' ? { termolabil: true } : {}
+    return { x, m: med(x.nome, x.principioAtivo, x.concentracao, x.forma, x.tarja, x.nivelMinimo, x.flag === 'ce', extra) }
+  })
+
   const entrada = (m, numero, fab, val, qtd, quando) => { em(quando); ops.registrarEntradaLote(m.id, { numero, fabricacao: fab, validade: val, quantidade: qtd }, juliana.id) }
   entrada(aas, 'AAS2511', somarMeses(hoje, -24), somarDias(hoje, -5), 24, somarMeses(hoje, -12))          // venceu: alerta de descarte
   entrada(metformina, 'MET2533', somarMeses(hoje, -20), somarDias(hoje, 20), 150, somarMeses(hoje, -3))  // vence antes do fim do ciclo
@@ -84,6 +91,7 @@ export async function criarDemonstracao(agoraReal = new Date()) {
   entrada(amoxicilina, 'AMX2606', somarMeses(hoje, -2), somarMeses(hoje, 14), 90, somarDias(hoje, -45))
   entrada(insulina, 'INS2607', somarMeses(hoje, -1), somarMeses(hoje, 6), 30, somarDias(hoje, -45))
   entrada(losartana, 'LOS2702', somarMeses(hoje, -1), somarMeses(hoje, 14), 120, somarDias(hoje, -6))
+  extras.forEach(({ x, m }, i) => entrada(m, `CAT${String(i + 1).padStart(3, '0')}`, somarMeses(hoje, -2), somarMeses(hoje, 12), x.quantidade, somarDias(hoje, -45)))
 
   // ── Boxes de cada paciente ──
   const box = {

@@ -173,7 +173,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding: 9px 10px; border-radius: 8px; font-size: var(--t-md);
 }
 .nav a:hover, .nav button:hover { background: var(--side-2); color: var(--side-ink); }
-.nav [aria-current="page"] { background: var(--side-2); color: var(--side-ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--pulse); }
+.nav [aria-current="page"] { background: var(--side-2); color: var(--side-ink); font-weight: 700; }
 .nav .badge { margin-left: auto; background: var(--tag-bg); color: var(--tag-ink); font-size: var(--t-xs); font-weight: 700; border-radius: 999px; padding: 0 7px; }
 .nav svg { width: 18px; height: 18px; flex: none; }
 .side .quem { margin-top: auto; border-top: 1px solid var(--side-2); padding: 14px 8px 0; font-size: var(--t-sm); color: var(--side-ink-2); }
@@ -382,6 +382,8 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: var(--t-md); }
   border: 1px solid var(--line-strong); background: var(--surface); border-radius: 999px; padding: 5px 12px; cursor: pointer; font-family: var(--f-mono); font-size: var(--t-sm);
 }
 .chip[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+.programas { display: flex; flex-wrap: wrap; gap: 6px; }
+.programas .chip { font-family: var(--f-body, inherit); }
 .stepper { display: inline-flex; align-items: center; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
 .stepper button { border: 0; background: var(--surface-2); width: 36px; height: 36px; cursor: pointer; font-size: 1.1rem; font-weight: 700; }
 .stepper output { min-width: 44px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -470,7 +472,38 @@ pre.json { background: var(--surface-2); border: 1px solid var(--line); border-r
 .segmentado button + button { border-left: 1px solid var(--line-strong); }
 .segmentado button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); }
 
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+/* ── Movimento ──
+   Completo por padrão; com "reduzir movimentos" (ou preferência do sistema) vira só um esmaecer, sem deslocamento. */
+@keyframes entra { from { opacity: 0; transform: translateY(var(--desloca, 8px)); } to { opacity: 1; transform: none; } }
+@keyframes surge { from { opacity: 0; } to { opacity: 1; } }
+@keyframes traca { to { stroke-dashoffset: 0; } }
+.pagina { animation: entra .32s cubic-bezier(.2, .7, .2, 1) both; --desloca: 6px; }
+.escalonar > * { animation: entra .4s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i, 0) * 55ms); --desloca: 10px; }
+.escalonar > :nth-child(1) { --i: 0; } .escalonar > :nth-child(2) { --i: 1; } .escalonar > :nth-child(3) { --i: 2; }
+.escalonar > :nth-child(4) { --i: 3; } .escalonar > :nth-child(5) { --i: 4; } .escalonar > :nth-child(6) { --i: 5; }
+.escalonar > :nth-child(n+7) { --i: 6; }
+.perfil-paciente .pagina { animation-duration: .5s; --desloca: 14px; }
+.perfil-paciente .escalonar > * { animation-duration: .55s; --desloca: 16px; }
+.btn, .card, .med, .chip, .atalho { transition: transform .18s ease, border-color .18s ease, background-color .18s ease, color .18s ease; }
+.btn:active:not(:disabled), .chip:active { transform: scale(.97); }
+.perfil-paciente .med:hover, .perfil-paciente .atalho:hover { transform: translateY(-3px); }
+.perfil-administrador .med:hover, .perfil-funcionario .med:hover { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .pagina, .escalonar > * { animation-name: surge; animation-delay: 0s; }
+  .btn, .card, .med, .chip, .atalho { transition-property: border-color, background-color, color; }
+  .btn:active:not(:disabled), .chip:active, .perfil-paciente .med:hover, .perfil-paciente .atalho:hover { transform: none; }
+}
+:root[data-movimento="reduzido"] .pagina, :root[data-movimento="reduzido"] .escalonar > * { animation-name: surge; animation-delay: 0s; }
+:root[data-movimento="reduzido"] .btn, :root[data-movimento="reduzido"] .card, :root[data-movimento="reduzido"] .med, :root[data-movimento="reduzido"] .chip, :root[data-movimento="reduzido"] .atalho { transition-property: border-color, background-color, color; }
+:root[data-movimento="reduzido"] .btn:active:not(:disabled), :root[data-movimento="reduzido"] .chip:active, :root[data-movimento="reduzido"] .perfil-paciente .med:hover, :root[data-movimento="reduzido"] .perfil-paciente .atalho:hover { transform: none; }
+
+/* Atalhos do início do paciente */
+.atalhos { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.atalho { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--ink); text-decoration: none; }
+.atalho:hover { border-color: var(--brand); }
+.atalho svg { width: 22px; height: 22px; color: var(--brand); }
+.atalho strong { font-size: var(--t-md, 1rem); }
+.atalho span { font-size: var(--t-sm); color: var(--ink-2); }
 
 /* ── Páginas públicas (início, termos, privacidade, contato) ── */
 .pular { position: absolute; left: -999px; top: 8px; background: var(--surface); color: var(--ink); padding: 8px 12px; border-radius: 8px; z-index: 100; }

@@ -43,6 +43,7 @@ const entregueEm = computed(() => ultimo.value?.entregas.at(-1)?.concluidaEm)
 const cobreAte = computed(() => (entregueEm.value ? somarDias(entregueEm.value, DIAS_CICLO) : null))
 const diasRestantes = computed(() => (cobreAte.value ? Math.ceil((inicioDoDia(cobreAte.value) - inicioDoDia(new Date())) / 86400000) : null))
 const base = computed(() => ativo.value || ultimo.value)
+const irParaHorarios = () => document.getElementById('horarios')?.scrollIntoView({ behavior: document.documentElement.dataset.movimento === 'reduzido' || matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
 </script>
 
 <template>
@@ -50,6 +51,15 @@ const base = computed(() => ativo.value || ultimo.value)
   <p v-if="carregando" class="muted">Carregando…</p>
   <div v-else class="grid-main-side">
     <div class="stack-lg">
+      <section class="stack" aria-labelledby="atalhos-titulo">
+        <h2 id="atalhos-titulo">Como podemos cuidar de você hoje?</h2>
+        <div class="atalhos escalonar">
+          <RouterLink class="atalho" :to="{ name: 'box', query: ultimo ? { repetir: 1 } : {} }"><Icone nome="box" /><strong>{{ ultimo ? 'Renovar minha Box' : 'Montar minha Box' }}</strong><span>{{ ultimo ? 'Mesmos medicamentos e horários' : 'Escolha medicamentos e horários' }}</span></RouterLink>
+          <RouterLink class="atalho" :to="{ name: 'receitas' }"><Icone nome="upload" /><strong>Enviar receita</strong><span>PDF ou foto, direto do celular</span></RouterLink>
+          <RouterLink class="atalho" :to="{ name: 'pedidos', params: ativo ? { id: ativo.id } : {} }"><Icone nome="entrega" /><strong>Acompanhar entrega</strong><span>{{ ativo ? 'Veja em que etapa está' : 'Histórico dos seus pedidos' }}</span></RouterLink>
+          <a v-if="base" class="atalho" href="#horarios" @click.prevent="irParaHorarios"><Icone nome="relogio" /><strong>Meus horários</strong><span>Sachê de cada hora do dia</span></a>
+        </div>
+      </section>
       <section class="card" aria-label="Sua Box">
         <div v-if="ativo" class="stack-lg">
           <div class="row-between"><div><h3>Box em andamento · pedido #{{ ativo.id }}</h3><p class="subtle">Ciclo de {{ data(ativo.criadoEm) }}</p></div><StatusPill :status="ativo.status" /></div>
@@ -72,7 +82,7 @@ const base = computed(() => ativo.value || ultimo.value)
         <div v-else class="stack"><h3>Comece pela sua receita</h3><p class="muted">Envie a receita, escolha medicamentos e horários e receba os sachês prontos em casa.</p>
           <div><RouterLink class="btn btn-primario" :to="{ name: 'box' }">Montar minha primeira Box</RouterLink></div></div>
       </section>
-      <section v-if="base" class="stack">
+      <section v-if="base" id="horarios" class="stack">
         <div class="secao-titulo"><h2>Seus horários</h2><span class="subtle">Cada compartimento é um sachê do dia</span></div>
         <OrganizadorHorarios :itens="base.itens" />
       </section>

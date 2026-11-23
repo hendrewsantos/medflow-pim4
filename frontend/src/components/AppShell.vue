@@ -50,6 +50,6 @@ async function sair() {
         <div class="quem"><span><strong>{{ auth.usuario?.nome }}</strong> · {{ PERFIL[auth.perfil] }}</span><button type="button" @click="sair">Sair</button></div>
       </div>
     </header>
-    <main id="conteudo" class="conteudo" tabindex="-1"><slot /></main>
+    <main id="conteudo" class="conteudo" :class="`perfil-${(auth.perfil || '').toLowerCase()}`" tabindex="-1"><div :key="route.fullPath" class="pagina"><slot /></div></main>
   </div>
 </template>

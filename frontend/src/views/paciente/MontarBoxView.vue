@@ -11,6 +11,7 @@ import { api } from '../../services/api.js'
 import { useUiStore } from '../../stores/ui.js'
 import { data, dataSo, numero, tarjaTexto } from '../../utils/formato.js'
 import { DIAS_CICLO, MAX_UNIDADES_POR_DOSE, inicioDoDia } from '../../domain/regras.js'
+import { PROGRAMAS, programaDe } from '../../domain/catalogo.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,6 +27,9 @@ const medicamentos = ref([])
 const emPreparacao = ref(null)
 const ultimo = ref(null)
 const busca = ref('')
+const programa = ref('')
+const LIMITE = 24
+const limite = ref(LIMITE)
 const box = reactive({ receitaId: null, itens: [], endereco: '' })
 const simulacao = ref(null)
 const erroConfirmacao = ref(null)
@@ -40,8 +44,13 @@ const porId = computed(() => new Map(medicamentos.value.map((m) => [m.id, m])))
 const simPorMed = computed(() => new Map((simulacao.value?.itens || []).map((i) => [i.medicamentoId, i])))
 const filtrados = computed(() => {
   const t = busca.value.trim().toLowerCase()
-  return t ? medicamentos.value.filter((m) => `${m.nome} ${m.principioAtivo}`.toLowerCase().includes(t)) : medicamentos.value
+  return medicamentos.value.filter((m) =>
+    (!programa.value || programaDe(m.principioAtivo) === programa.value) &&
+    (!t || `${m.nome} ${m.principioAtivo}`.toLowerCase().includes(t)))
 })
+const visiveis = computed(() => filtrados.value.slice(0, limite.value))
+const programasComItens = computed(() => PROGRAMAS.filter((p) => medicamentos.value.some((m) => programaDe(m.principioAtivo) === p)))
+watch([busca, programa], () => { limite.value = LIMITE })
 const nomeMed = (m) => (m ? `${m.nome} ${m.concentracao}` : '')
 const naBox = (id) => box.itens.some((i) => i.medicamentoId === id)
 const copiarItens = (p) => p.itens.map((i) => ({ medicamentoId: i.medicamentoId, horarios: [...i.horarios], dosePorHorario: i.dosePorHorario }))
@@ -174,13 +183,20 @@ async function confirmar() {
       <section class="stack">
         <div class="row-between"><h2>Escolha os medicamentos</h2>
           <div class="campo" style="width: min(280px, 100%)"><label class="sr-only" for="busca">Buscar medicamento</label><input id="busca" v-model="busca" class="input" type="search" placeholder="Buscar por nome ou princípio ativo" /></div></div>
+        <div class="programas" role="group" aria-label="Programa de cuidado">
+          <button class="chip" type="button" :aria-pressed="!programa" @click="programa = ''">Todos</button>
+          <button v-for="p in programasComItens" :key="p" class="chip" type="button" :aria-pressed="programa === p" @click="programa = p">{{ p }}</button>
+        </div>
+        <p class="subtle" aria-live="polite">{{ filtrados.length }} {{ filtrados.length === 1 ? 'medicamento' : 'medicamentos' }}<template v-if="programa"> em {{ programa }}</template></p>
         <div class="catalogo">
-          <button v-for="m in filtrados" :key="m.id" class="med" type="button" :aria-pressed="naBox(m.id)" @click="abrirEdicao(m)">
+          <button v-for="m in visiveis" :key="m.id" class="med" type="button" :aria-pressed="naBox(m.id)" @click="abrirEdicao(m)">
             <span class="row-between"><span class="nome">{{ nomeMed(m) }}</span><span class="tarja" :class="`tarja-${m.tarja}`">{{ tarjaTexto(m.tarja) }}</span></span>
             <span class="principio">{{ m.principioAtivo }} · {{ m.formaFarmaceutica }}</span>
             <span class="rodape"><span :class="disponibilidade(m).classe">{{ disponibilidade(m).texto }}</span><span>{{ naBox(m.id) ? 'Na Box · editar' : 'Adicionar' }}</span></span>
           </button>
         </div>
+        <div v-if="!filtrados.length" class="vazio"><Icone nome="vazio" /><p>Nenhum medicamento encontrado. Tente outro nome ou outro programa.</p></div>
+        <div v-else-if="filtrados.length > visiveis.length"><button class="btn" type="button" @click="limite += LIMITE">Mostrar mais ({{ filtrados.length - visiveis.length }})</button></div>
         <p class="subtle">Medicamentos de controle especial (Portaria SVS/MS 344/1998) não aparecem aqui: eles não podem ser fracionados na Box.</p>
       </section>
       <aside class="card stack">

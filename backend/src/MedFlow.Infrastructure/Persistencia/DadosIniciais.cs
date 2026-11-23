@@ -73,7 +73,8 @@ public static class DadosIniciais
         var insulina = new Medicamento("Insulina NPH", "insulina humana", "100 UI/mL", "caneta", Tarja.Vermelha, false, 20, CategoriaRegulatoria.Comum, termolabil: true);
         insulina.RegistrarEntrada("INS2611", hoje.AddMonths(-1), hoje.AddMonths(5), 40, agora);
 
-        var medicamentos = new[] { amoxicilina, insulina, losartana, metformina, sinvastatina, aas, omeprazol, levotiroxina, atenolol, hidroclorotiazida, anlodipino, clonazepam };
+        var medicamentos = new[] { amoxicilina, insulina, losartana, metformina, sinvastatina, aas, omeprazol, levotiroxina, atenolol, hidroclorotiazida, anlodipino, clonazepam }
+            .Concat(CatalogoAdicional.Criar(hoje, agora)).ToArray();
         db.Medicamentos.AddRange(medicamentos);
         await db.SaveChangesAsync(ct);
 

@@ -20,6 +20,7 @@ const temas = [['sistema', 'Sistema'], ['light', 'Claro'], ['dark', 'Escuro']]
       <div class="stack"><span class="rotulo">Tema</span>
         <div class="segmentado"><button v-for="[v, r] in temas" :key="v" type="button" :aria-pressed="ui.prefs.tema === v" @click="ui.definir('tema', v)">{{ r }}</button></div></div>
       <label class="check"><input id="contraste" type="checkbox" :checked="ui.prefs.contraste" @change="ui.definir('contraste', $event.target.checked)" /> Alto contraste</label>
+      <label class="check"><input id="movimento" type="checkbox" :checked="ui.prefs.reduzirMovimento" @change="ui.definir('reduzirMovimento', $event.target.checked)" /> Reduzir movimentos</label>
       <p class="subtle">O botão do VLibras, no canto da tela, traduz o conteúdo para Libras.</p>
     </div>
   </div>

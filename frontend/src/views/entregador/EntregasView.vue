@@ -7,7 +7,6 @@ import ModalDialogo from '../../components/ModalDialogo.vue'
 import { api } from '../../services/api.js'
 import { useAuthStore } from '../../stores/auth.js'
 import { useUiStore } from '../../stores/ui.js'
-import { primeiroNome } from '../../utils/formato.js'
 
 const auth = useAuthStore()
 const ui = useUiStore()
@@ -51,7 +50,7 @@ async function salvarOcorrencia() {
 </script>
 
 <template>
-  <div class="cabecalho-pagina"><div><h1>Olá, {{ primeiroNome(auth.usuario?.nome) }}</h1><p>Confirme cada entrega com o nome de quem recebeu: é o comprovante que o paciente e a farmácia veem.</p></div></div>
+  <div class="cabecalho-pagina"><div><h1>Minhas entregas</h1><p>Confirme cada entrega com o nome de quem recebeu: é o comprovante que o paciente e a farmácia veem.</p></div></div>
   <div class="abas" role="tablist"><button v-for="[k, r] in ABAS" :key="k" role="tab" type="button" :aria-selected="aba === k" @click="aba = k">{{ r }}<span class="cont">{{ grupos[k].length }}</span></button></div>
   <div v-if="lista.length" class="entregas">
     <article v-for="e in lista" :key="e.pedidoId" class="entrega">
