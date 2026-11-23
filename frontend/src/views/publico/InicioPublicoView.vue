@@ -31,7 +31,15 @@ const ACESSIBILIDADE = [
         <RouterLink class="btn btn-primario" :to="{ name: 'cadastro' }">Criar conta</RouterLink>
         <RouterLink class="btn" :to="{ name: 'login' }">Entrar</RouterLink>
       </div>
-      <p class="subtle">Projeto acadêmico (UNIP). Ambiente de demonstração com dados fictícios.</p>
+      <p class="subtle">Projeto acadêmico (UNIP). Ambiente de demonstração com dados fictícios. Existem outras empresas chamadas Medflow, em nichos diferentes: o nosso é entrega rastreável de medicamento de uso contínuo, em sachês por horário.</p>
+    </section>
+
+    <section class="pub-secao pub-site" aria-labelledby="h-site">
+      <div class="card row-between">
+        <div class="stack"><h2 id="h-site">Conheça a página institucional do MedFlow</h2>
+          <p class="muted">Menu, telas do sistema, números do projeto e o passo a passo, como seria o site da empresa.</p></div>
+        <RouterLink class="btn btn-primario" :to="{ name: 'site' }">Ver a página institucional</RouterLink>
+      </div>
     </section>
 
     <section class="pub-secao" aria-labelledby="h-como">

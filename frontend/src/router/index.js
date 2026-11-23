@@ -8,6 +8,7 @@ const EQUIPE = ['Administrador', 'Funcionario']
 const routes = [
   // Páginas públicas com layout próprio (aberta: também acessíveis a quem já entrou).
   { path: '/', name: 'home', component: () => import('../views/publico/InicioPublicoView.vue'), meta: { publica: true, aberta: true, titulo: 'Início' } },
+  { path: '/site', name: 'site', component: () => import('../views/publico/SiteView.vue'), meta: { publica: true, aberta: true, titulo: 'Página institucional' } },
   { path: '/termos', name: 'termos', component: () => import('../views/publico/TermosView.vue'), meta: { publica: true, aberta: true, titulo: 'Termos de Uso' } },
   { path: '/privacidade', name: 'privacidade', component: () => import('../views/publico/PrivacidadeView.vue'), meta: { publica: true, aberta: true, titulo: 'Política de Privacidade' } },
   { path: '/contato', name: 'contato', component: () => import('../views/publico/ContatoView.vue'), meta: { publica: true, aberta: true, titulo: 'Contato' } },
