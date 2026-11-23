@@ -28,12 +28,16 @@ services:
       Cors__Origens__0: https://${DOMINIO:?defina no .env}
       Banco__AplicarMigrations: "true"
       Demo__Semear: ${DEMO_SEMEAR:-false}
+      # Pagamento simulado (sem cobrança real). Para a demonstração, defina PAGAMENTO_SIMULADO=true no .env.
+      Pagamento__Habilitado: ${PAGAMENTO_SIMULADO:-false}
+      Pagamento__PrazoMinutos: ${PAGAMENTO_PRAZO_MINUTOS:-30}
+      Demo__BotoesDePagamento: ${PAGAMENTO_SIMULADO:-false}
       Armazenamento__Pasta: /dados/receitas
     volumes: [receitas:/dados/receitas]
   web:
     build:
       context: ./frontend
-      args: { VITE_API_URL: "" }
+      args: { VITE_API_URL: "", VITE_BOTOES_PAGAMENTO: "${PAGAMENTO_SIMULADO:-false}" }
     restart: unless-stopped
   caddy:
     image: caddy:2

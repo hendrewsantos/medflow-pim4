@@ -10,7 +10,7 @@ Códigos: 400 validação · 401 sem token · 403 sem permissão · 404 · 409 c
 - `GET /api/auth/eu`
 - `POST /api/receitas` (multipart: `arquivo`, `consentimentoSaude`), `GET /api/receitas/minhas`, `GET /api/receitas/pendentes` (Administrador), `GET /api/receitas/{id}/arquivo`, `POST /api/receitas/{id}/recusar {motivo}`
 - `GET /api/medicamentos`, `POST/PUT /api/medicamentos` (equipe), `POST /api/medicamentos/{id}/lotes`, `GET /api/medicamentos/movimentacoes`, `GET /api/medicamentos/alertas`
-- `POST /api/pedidos/simular`, `POST /api/pedidos`, `GET /api/pedidos/meus` → `PedidoResumoDto[]`, `GET /api/pedidos/{id}` → `PedidoDto` (tem `historico[]` = linha do tempo), `POST /api/pedidos/{id}/cancelar`, `POST /api/pedidos/{id}/finalizar-box` (equipe), `GET /api/pedidos?status=` (equipe)
+- `POST /api/pedidos/simular`, `POST /api/pedidos`, `GET /api/pedidos/meus` → `PedidoResumoDto[]`, `GET /api/pedidos/{id}` → `PedidoDto` (tem `historico[]` = linha do tempo), `POST /api/pedidos/{id}/cancelar`, `POST /api/pedidos/{id}/pagamento/aprovar` e `POST /api/pedidos/{id}/pagamento/expirar` (Paciente; só existem na demonstração com `Demo:BotoesDePagamento`, senão 404), `POST /api/pedidos/{id}/finalizar-box` (equipe), `GET /api/pedidos?status=` (equipe)
 - `GET /api/painel` (equipe), `GET/POST /api/usuarios`, `PATCH /api/usuarios/{id}/ativo?valor=true|false` (Administrador)
 - `GET /api/privacidade/meus-dados`, `GET /api/privacidade/meus-dados/exportar`, `PUT /api/privacidade/meus-dados`, `DELETE /api/privacidade/minha-conta`
 
@@ -53,3 +53,7 @@ O perfil Entregador NÃO recebe medicamentos, lotes nem receita (nem em `GET /ap
 
 ### Saúde
 `GET /health/live` (200 sempre) · `GET /health/ready` (200; 503 se o banco falhar)
+
+## Pagamento simulado
+
+Com `Pagamento:Habilitado=true`, a confirmação do pedido reserva o estoque e deixa o pedido em `AguardandoPagamento` por `Pagamento:PrazoMinutos`. `PedidoDto` traz `valorMedicamentos`, `valorEntrega`, `pagamentoPrazoEm` e `pagoEm`; `MedicamentoDto` traz `precoUnitario` (valores fictícios) e `SimulacaoDto` traz `valorMedicamentos`, `taxaEntrega` e `prazoPagamentoMinutos`. Pagar leva o pedido a `EmSeparacao` (receita já aprovada) ou `Pendente` (receita em análise); vencido o prazo, o pedido vai a `Cancelado` e a reserva volta ao estoque. Não há cobrança real nem dado de pagamento.
