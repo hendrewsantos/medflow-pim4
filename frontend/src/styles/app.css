@@ -566,3 +566,15 @@ pre.json { background: var(--surface-2); border: 1px solid var(--line); border-r
 .kpi { background: transparent; border: 0; border-radius: 0; padding: 12px 20px 12px 0; }
 .barra { background: var(--surface); }
 .pub-passos .card { border-top: 2px solid var(--line-strong); }
+
+/* Passos da Box: texto simples com sublinhado no passo atual (sem bolinhas numeradas) */
+.passos { gap: 22px; border-bottom: 1px solid var(--line); }
+.passos li { background: transparent; border: 0; border-radius: 0; padding: 0 0 8px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.passos li::before { content: counter(passo) "."; width: auto; height: auto; border-radius: 0; background: none; color: inherit; font-family: inherit; display: inline; }
+.passos li[aria-current="step"] { border-bottom-color: var(--brand); }
+.passos li[aria-current="step"]::before, .passos li.feito::before { background: none; color: inherit; }
+.passos li.feito::before { content: counter(passo) ". ✓"; color: var(--brand); }
+@media (max-width: 1100px) {
+  .barra { flex-wrap: wrap; gap: 8px 16px; padding-block: 8px; }
+  .barra .nav { order: 3; flex-basis: 100%; }
+}
