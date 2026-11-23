@@ -5,6 +5,8 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Icone from '../../components/Icone.vue'
 import StatusPill from '../../components/StatusPill.vue'
+import AvisosInteracao from '../../components/AvisosInteracao.vue'
+import Esqueleto from '../../components/Esqueleto.vue'
 import ModalDialogo from '../../components/ModalDialogo.vue'
 import EnvioReceita from './EnvioReceita.vue'
 import { api } from '../../services/api.js'
@@ -53,6 +55,7 @@ const programasComItens = computed(() => PROGRAMAS.filter((p) => medicamentos.va
 watch([busca, programa], () => { limite.value = LIMITE })
 const valorDoItem = (i) => (simPorMed.value.get(i.medicamentoId)?.necessario ?? 0) * (porId.value.get(i.medicamentoId)?.precoUnitario ?? 0)
 const pagamentoAtivo = computed(() => (simulacao.value?.valorMedicamentos ?? 0) > 0)
+const textosDaBox = computed(() => box.itens.map((i) => { const m = porId.value.get(i.medicamentoId); return m ? `${m.nome} ${m.principioAtivo}` : '' }))
 const nomeMed = (m) => (m ? `${m.nome} ${m.concentracao}` : '')
 const naBox = (id) => box.itens.some((i) => i.medicamentoId === id)
 const copiarItens = (p) => p.itens.map((i) => ({ medicamentoId: i.medicamentoId, horarios: [...i.horarios], dosePorHorario: i.dosePorHorario }))
@@ -147,7 +150,7 @@ async function confirmar() {
 </script>
 
 <template>
-  <p v-if="carregando" class="muted">Carregando…</p>
+  <Esqueleto v-if="carregando" :linhas="4" />
 
   <div v-else-if="emPreparacao" class="card stack" style="max-width: 640px">
     <h2>Você já tem uma Box em preparação</h2>
@@ -242,6 +245,7 @@ async function confirmar() {
             </tbody>
           </table>
         </div>
+        <AvisosInteracao :itens="textosDaBox" />
         <dl v-if="pagamentoAtivo" class="valores" aria-label="Valores da Box">
           <div><dt>Medicamentos</dt><dd>{{ reais(simulacao.valorMedicamentos) }}</dd></div>
           <div><dt>Entrega</dt><dd>{{ reais(simulacao.taxaEntrega) }}</dd></div>

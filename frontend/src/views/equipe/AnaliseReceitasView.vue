@@ -1,6 +1,7 @@
 <script setup>
 // UC06 / RF07 — análise humana da receita: dados do prescritor, checklist e conferência item a item.
 // Nenhuma Box é separada sem aprovação farmacêutica; item "Divergente" obriga recusar com motivo.
+import AvisosInteracao from '../../components/AvisosInteracao.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import Icone from '../../components/Icone.vue'
 import Receituario from '../../components/Receituario.vue'
@@ -111,6 +112,7 @@ async function recusar() {
             <template v-if="pedido">
               <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Medicamento</th><th>Horários</th><th class="n">Dose</th></tr></thead>
                 <tbody><tr v-for="i in pedido.itens" :key="i.medicamentoId"><td>{{ i.medicamento }}</td><td class="mono">{{ i.horarios.join(' · ') }}</td><td class="n">{{ i.dosePorHorario }}</td></tr></tbody></table></div>
+              <AvisosInteracao perfil="equipe" :itens="pedido.itens.map((i) => i.medicamento)" />
               <p class="subtle">Pedido #{{ pedido.id }} · estoque já reservado. Confira se cada item e posologia constam na receita.</p>
             </template>
             <p v-else class="muted">Ainda não há pedido ligado a esta receita.</p>

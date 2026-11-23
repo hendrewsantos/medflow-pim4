@@ -3,6 +3,7 @@ import StatusPill from './StatusPill.vue'
 import LinhaDoTempo from './LinhaDoTempo.vue'
 import Icone from './Icone.vue'
 import ContagemRegressiva from './ContagemRegressiva.vue'
+import AvisosInteracao from './AvisosInteracao.vue'
 import { MODO_DEMO } from '../services/api.js'
 import { data, dataSo, dataHora, numero, reais, mensagemStatus } from '../utils/formato.js'
 
@@ -11,6 +12,7 @@ defineProps({
   podeCancelar: { type: Boolean, default: false },
   mostrarLotes: { type: Boolean, default: true },
   podePagar: { type: Boolean, default: false },
+  mostrarInteracoes: { type: Boolean, default: false },
 })
 defineEmits(['cancelar', 'aprovar-pagamento', 'expirar-pagamento', 'atualizar'])
 // Os botões que imitam o gateway existem só na demonstração (a API responde 404 fora dela).
@@ -50,6 +52,7 @@ const botoesDeDemonstracao = MODO_DEMO || import.meta.env.VITE_BOTOES_PAGAMENTO 
       <div><dt>Entrega</dt><dd>{{ reais(pedido.valorEntrega) }}</dd></div>
       <div class="total"><dt>Total{{ pedido.pagoEm ? ' pago' : '' }}</dt><dd>{{ reais(pedido.valorMedicamentos + pedido.valorEntrega) }}</dd></div>
     </dl>
+    <AvisosInteracao v-if="mostrarInteracoes" perfil="equipe" :itens="pedido.itens.map((i) => i.medicamento)" />
     <div class="stack">
       <h4>Itens da Box · {{ pedido.diasCiclo }} dias</h4>
       <div class="tabela-wrap">

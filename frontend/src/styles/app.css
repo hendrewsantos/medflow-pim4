@@ -621,3 +621,13 @@ pre.json { background: var(--surface-2); border: 1px solid var(--line); border-r
 .valores dd { margin: 0; font-variant-numeric: tabular-nums; }
 .valores .total { border-top: 1px solid var(--line); padding-top: 6px; margin-top: 2px; font-weight: 700; }
 .valores .total dt { color: var(--ink); }
+
+/* Esqueleto de carregamento: blocos neutros com um pulso discreto */
+.esqueleto { display: grid; gap: 14px; max-width: 760px; }
+.esqueleto span { display: block; height: 18px; border-radius: 6px; background: var(--line); animation: esq-pulso 1.4s ease-in-out infinite; }
+.esqueleto span:first-child { height: 30px; width: 40%; }
+.esqueleto span:nth-child(odd) { width: 92%; }
+.esqueleto span:nth-child(even) { width: 78%; }
+@keyframes esq-pulso { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .esqueleto span { animation: none; } }
+:root[data-movimento="reduzido"] .esqueleto span { animation: none; }

@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import Icone from '../../components/Icone.vue'
 import StatusPill from '../../components/StatusPill.vue'
+import Esqueleto from '../../components/Esqueleto.vue'
 import LinhaDoTempo from '../../components/LinhaDoTempo.vue'
 import OrganizadorHorarios from '../../components/OrganizadorHorarios.vue'
 import { api } from '../../services/api.js'
@@ -50,7 +51,7 @@ const irParaHorarios = () => document.getElementById('horarios')?.scrollIntoView
 
 <template>
   <div class="cabecalho-pagina"><div><h1>Início</h1></div></div>
-  <p v-if="carregando" class="muted">Carregando…</p>
+  <Esqueleto v-if="carregando" :linhas="5" />
   <div v-else class="grid-main-side">
     <div class="stack-lg">
       <section class="stack" aria-labelledby="atalhos-titulo">

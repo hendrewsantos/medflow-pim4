@@ -61,7 +61,7 @@ async function finalizar() {
       </div>
       <div v-if="detalhe.status === 'Pendente'" class="aviso aviso-espera"><Icone nome="relogio" />
         <p>Aguardando a análise da receita. <RouterLink v-if="auth.perfil === 'Administrador'" class="btn-link" :to="{ name: 'fila' }">Analisar agora</RouterLink><template v-else>Somente a farmacêutica responsável pode aprovar.</template></p></div>
-      <PedidoDetalhe :pedido="detalhe" />
+      <PedidoDetalhe :pedido="detalhe" mostrar-interacoes />
     </section>
   </div>
   <div v-else class="vazio"><Icone nome="vazio" /><p>Nenhum pedido nesta etapa.</p></div>
