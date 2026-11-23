@@ -99,7 +99,7 @@ async function recusar() {
   <template v-else>
     <div class="cabecalho-pagina"><div><h1>Análise de receitas</h1><p>Nenhum pedido segue para separação sem receita aprovada por farmacêutico.</p></div></div>
     <div class="grid-lista-detalhe">
-      <section class="tabela-wrap" aria-label="Receitas pendentes">
+      <section class="tabela-wrap" tabindex="0" aria-label="Receitas pendentes">
         <table class="tabela"><thead><tr><th>Paciente</th><th>Enviada</th></tr></thead>
           <tbody><tr v-for="r in pendentes" :key="r.id" class="clicavel" tabindex="0" :aria-selected="r.id === sel?.id" @click="carregar(r.id)" @keydown.enter="carregar(r.id)">
             <td><strong>{{ r.paciente }}</strong><div class="subtle">{{ r.nomeOriginal }}</div></td><td class="subtle">{{ relativo(r.enviadaEm) }}</td></tr></tbody>
@@ -110,7 +110,7 @@ async function recusar() {
           <div class="stack"><h3>Receita enviada em {{ dataHora(sel.enviadaEm) }}</h3><Receituario :receita="sel" /></div>
           <div class="stack"><h3>Pedido do paciente</h3>
             <template v-if="pedido">
-              <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Medicamento</th><th>Horários</th><th class="n">Dose</th></tr></thead>
+              <div class="tabela-wrap" tabindex="0"><table class="tabela"><thead><tr><th>Medicamento</th><th>Horários</th><th class="n">Dose</th></tr></thead>
                 <tbody><tr v-for="i in pedido.itens" :key="i.medicamentoId"><td>{{ i.medicamento }}</td><td class="mono">{{ i.horarios.join(' · ') }}</td><td class="n">{{ i.dosePorHorario }}</td></tr></tbody></table></div>
               <AvisosInteracao perfil="equipe" :itens="pedido.itens.map((i) => i.medicamento)" />
               <p class="subtle">Pedido #{{ pedido.id }} · estoque já reservado. Confira se cada item e posologia constam na receita.</p>

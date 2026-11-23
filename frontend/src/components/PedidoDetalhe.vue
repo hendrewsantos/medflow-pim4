@@ -55,7 +55,7 @@ const botoesDeDemonstracao = MODO_DEMO || import.meta.env.VITE_BOTOES_PAGAMENTO 
     <AvisosInteracao v-if="mostrarInteracoes" perfil="equipe" :itens="pedido.itens.map((i) => i.medicamento)" />
     <div class="stack">
       <h4>Itens da Box · {{ pedido.diasCiclo }} dias</h4>
-      <div class="tabela-wrap">
+      <div class="tabela-wrap" tabindex="0">
         <table class="tabela">
           <thead><tr><th>Medicamento</th><th>Horários</th><th class="n">Por dose</th><th class="n">Total</th><th v-if="mostrarLotes">Lotes</th></tr></thead>
           <tbody>

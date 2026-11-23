@@ -117,7 +117,7 @@ private fun CartaoEntrega(entrega: EntregaEntity, aguardandoEnvio: Boolean, onCl
     val situacao = Formatadores.rotuloStatus(entrega.status)
     val descricao = buildString {
         append("Entrega ${entrega.codigo}. Paciente ${entrega.paciente}. Endereço ${entrega.endereco}. ")
-        append("${entrega.totalSaches} sachês. Situação: $situacao.")
+        append("${entrega.totalSaches} ${if (entrega.totalSaches == 1) "sachê" else "sachês"}. Situação: $situacao.")
         if (aguardandoEnvio) append(" Ação aguardando envio.")
         append(" Toque para abrir.")
     }
@@ -131,7 +131,7 @@ private fun CartaoEntrega(entrega: EntregaEntity, aguardandoEnvio: Boolean, onCl
             Text(entrega.codigo, style = MaterialTheme.typography.titleMedium)
             Text(entrega.paciente, style = MaterialTheme.typography.bodyLarge)
             Text(entrega.endereco, style = MaterialTheme.typography.bodyMedium)
-            Text("${entrega.totalSaches} sachês · $situacao", style = MaterialTheme.typography.bodyMedium)
+            Text("${entrega.totalSaches} ${if (entrega.totalSaches == 1) "sachê" else "sachês"} · $situacao", style = MaterialTheme.typography.bodyMedium)
             if (aguardandoEnvio) {
                 Text(
                     "Aguardando envio (sem internet)",

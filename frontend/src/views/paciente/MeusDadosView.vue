@@ -120,7 +120,7 @@ async function excluir() {
         <div><button class="btn btn-primario" type="submit">Salvar alterações</button> <span class="subtle">Correção de dados — art. 18, III</span></div>
       </form>
       <section class="stack"><h3>Consentimentos registrados</h3>
-        <div class="tabela-wrap"><table class="tabela">
+        <div class="tabela-wrap" tabindex="0"><table class="tabela">
           <thead><tr><th>Finalidade</th><th>Base legal</th><th>Versão</th><th>Concedido em</th><th>Situação</th></tr></thead>
           <tbody><tr v-for="c in dados.consentimentos" :key="c.tipo + c.concedidoEm">
             <td>{{ c.tipo === 'TermosDeUso' ? 'Cadastro e entrega' : 'Dados de saúde da receita' }}</td><td>{{ c.tipo === 'TermosDeUso' ? 'Art. 7º, I' : 'Art. 11, I' }}</td>

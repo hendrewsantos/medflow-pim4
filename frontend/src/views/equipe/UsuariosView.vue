@@ -39,7 +39,7 @@ async function salvar() {
     <div><h1>Usuários</h1><p>O CPF aparece mascarado e a senha nunca sai do servidor, nem como hash.</p></div>
     <div class="row"><button class="btn btn-primario" type="button" @click="aberto = true">Novo usuário interno</button></div>
   </div>
-  <div class="tabela-wrap"><table class="tabela">
+  <div class="tabela-wrap" tabindex="0"><table class="tabela">
     <thead><tr><th>Nome</th><th>E-mail</th><th>CPF</th><th>Perfil</th><th>Situação</th><th></th></tr></thead>
     <tbody><tr v-for="u in lista" :key="u.id"><td><strong>{{ u.nome }}</strong></td><td>{{ u.email }}</td><td class="mono">{{ u.cpfMascarado }}</td><td>{{ PERFIL[u.perfil] }}</td>
       <td><span class="pill" :class="u.ativo ? 'pill-ok' : 'pill-neutro'">{{ u.ativo ? 'Ativo' : 'Inativo' }}</span></td>

@@ -234,7 +234,7 @@ async function confirmar() {
     <!-- Passo 3: revisão e confirmação -->
     <div v-else class="grid-main-side">
       <section class="stack-lg">
-        <div class="tabela-wrap">
+        <div class="tabela-wrap" tabindex="0">
           <table class="tabela">
             <thead><tr><th>Medicamento</th><th>Horários</th><th class="n">Por dose</th><th class="n">Total ({{ DIAS_CICLO }} dias)</th><th v-if="pagamentoAtivo" class="n">Valor</th></tr></thead>
             <tbody>

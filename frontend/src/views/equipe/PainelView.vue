@@ -75,7 +75,7 @@ async function simularPico() {
       <div class="row-between"><div><h3 id="h-prev">Previsão de reposição</h3><p class="subtle">Média móvel de 3 meses das baixas. "Dias até o mínimo" estima quando o saldo disponível chega ao nível mínimo.</p></div>
         <div class="row" role="group" aria-label="Exportar relatórios em CSV">
           <button v-for="[k, r] in RELATORIOS" :key="k" class="btn btn-sm" type="button" :disabled="baixando === k" @click="exportar(k)">{{ baixando === k ? 'Baixando…' : `CSV: ${r}` }}</button></div></div>
-      <div v-if="previsao.length" class="tabela-wrap"><table class="tabela">
+      <div v-if="previsao.length" class="tabela-wrap" tabindex="0"><table class="tabela">
         <thead><tr><th>Medicamento</th><th class="n">Consumo médio/mês</th><th class="n">Disponível</th><th class="n">Mínimo</th><th class="n">Dias até o mínimo</th><th>Situação</th></tr></thead>
         <tbody><tr v-for="p in previsao" :key="p.medicamentoId"><td>{{ p.nome }}</td><td class="n">{{ numero(p.consumoMedioMensal) }}</td><td class="n">{{ numero(p.disponivel) }}</td><td class="n">{{ numero(p.nivelMinimo) }}</td>
           <td class="n">{{ p.diasAteMinimo === null ? '—' : numero(p.diasAteMinimo) }}</td><td><span class="pill" :class="situacaoReposicao(p)[1]">{{ situacaoReposicao(p)[0] }}</span></td></tr></tbody>

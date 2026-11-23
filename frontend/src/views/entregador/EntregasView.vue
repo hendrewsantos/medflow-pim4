@@ -54,7 +54,7 @@ async function salvarOcorrencia() {
   <div class="abas" role="tablist"><button v-for="[k, r] in ABAS" :key="k" role="tab" type="button" :aria-selected="aba === k" @click="aba = k">{{ r }}<span class="cont">{{ grupos[k].length }}</span></button></div>
   <div v-if="lista.length" class="entregas">
     <article v-for="e in lista" :key="e.pedidoId" class="entrega">
-      <div class="row-between"><span><strong>{{ e.codigo }}</strong> · {{ e.totalSaches }} sachês</span>
+      <div class="row-between"><span><strong>{{ e.codigo }}</strong> · {{ e.totalSaches }} {{ e.totalSaches === 1 ? "sachê" : "sachês" }}</span>
         <span v-if="aba === 'concluidas'" class="pill" :class="e.status === 'Entregue' ? 'pill-ok' : 'pill-espera'">{{ e.status === 'Entregue' ? 'Entregue' : 'Ocorrência' }}</span></div>
       <div><strong>{{ e.paciente }}</strong><p class="endereco">{{ e.endereco }}</p></div>
       <div v-if="aba !== 'concluidas'" class="acoes-entrega">

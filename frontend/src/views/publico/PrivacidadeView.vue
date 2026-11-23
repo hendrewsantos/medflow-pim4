@@ -21,7 +21,7 @@ import { CONTROLADOR, EMAIL_ENCARREGADO, VERSAO_TERMO, VIGENTE_DESDE } from './d
         </ul></section>
 
       <section class="stack"><h2>3. Para que usamos (finalidades) e em qual base legal</h2>
-        <div class="tabela-wrap"><table class="tabela">
+        <div class="tabela-wrap" tabindex="0"><table class="tabela">
           <thead><tr><th>Finalidade</th><th>Dados</th><th>Base legal</th></tr></thead>
           <tbody>
             <tr><td>Criar e manter a sua conta, montar o pedido e entregar a Box</td><td>Cadastro e endereço</td><td>Art. 7º, I (consentimento)</td></tr>

@@ -87,7 +87,7 @@ async function confirmarCancelamento() {
     <div class="cabecalho-pagina"><div><h1>Meus pedidos</h1><p>Cada pedido é uma Box de {{ DIAS_CICLO }} dias. O status mostra exatamente em que etapa ela está.</p></div></div>
     <div class="grid-detalhe-lista">
       <section class="card"><PedidoDetalhe v-if="detalhe" :pedido="detalhe" pode-cancelar pode-pagar @cancelar="cancelando = $event" @aprovar-pagamento="aprovarPagamento" @expirar-pagamento="simularExpiracao" @atualizar="prazoEncerrado" /></section>
-      <section class="tabela-wrap" aria-label="Lista de pedidos">
+      <section class="tabela-wrap" tabindex="0" aria-label="Lista de pedidos">
         <table class="tabela">
           <thead><tr><th>Pedido</th><th>Status</th></tr></thead>
           <tbody>

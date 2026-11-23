@@ -50,7 +50,7 @@ async function finalizar() {
     <button v-for="s in ABAS" :key="s" role="tab" type="button" :aria-selected="aba === s" @click="trocarAba(s)">{{ STATUS_PEDIDO[s].curto }}<span class="cont">{{ todos.filter((p) => p.status === s).length }}</span></button>
   </div>
   <div v-if="lista.length" class="grid-lista-detalhe">
-    <section class="tabela-wrap"><table class="tabela"><thead><tr><th>Paciente</th><th>Atualizado</th></tr></thead>
+    <section class="tabela-wrap" tabindex="0"><table class="tabela"><thead><tr><th>Paciente</th><th>Atualizado</th></tr></thead>
       <tbody><tr v-for="p in lista" :key="p.id" class="clicavel" tabindex="0" :aria-selected="p.id === detalhe?.id" @click="carregar(p.id)" @keydown.enter="carregar(p.id)">
         <td><strong>{{ p.paciente }}</strong><div class="subtle">#{{ p.id }} · {{ p.totalItens }} itens</div></td><td class="subtle">{{ relativo(p.atualizadoEm) }}</td></tr></tbody></table></section>
     <section v-if="detalhe" class="card stack-lg">

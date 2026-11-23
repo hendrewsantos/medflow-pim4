@@ -236,6 +236,17 @@ class PedidosViewModel(private val repo: PedidosRepository) : ViewModel() {
 
     init {
         atualizar()
+        acompanhar()
+    }
+
+    /** Mantém a lista em dia sozinha: pedido novo ou mudança de etapa aparece sem o usuário puxar a tela. */
+    private fun acompanhar() {
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(8_000)
+                if (!extra.value.atualizando) repo.atualizar()
+            }
+        }
     }
 
     fun atualizar() {

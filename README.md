@@ -93,6 +93,8 @@ Dados fictícios, criados automaticamente quando a API roda em modo de desenvolv
 | Funcionário (operador) | `bruno@medflow.com.br` | `MedFlow2026` |
 | Entregador | `rafael@medflow.com.br` | `MedFlow2026` |
 
+Os pacientes Mariana Alves, Paulo Ribeiro e Beatriz Costa já têm receita aprovada e nenhuma Box: servem para montar uma nova Box na apresentação sem esbarrar no aviso de Box em preparação (cada paciente só pode ter uma por vez). No modo demonstração do site (`npm run dev:demo`) estão a Mariana e o Paulo.
+
 > Esta senha existe só para demonstração. Nunca use essa senha nem esses dados em um ambiente real.
 
 ## Como abrir o sistema

@@ -162,7 +162,7 @@ private fun DadosEntrega(entrega: EntregaEntity) {
     Campo("Paciente", entrega.paciente)
     Campo("Endereço", entrega.endereco)
     Campo("Telefone", entrega.telefone?.takeIf { it.isNotBlank() } ?: "Não informado")
-    Campo("Quantidade", "${entrega.totalSaches} sachês")
+    Campo("Quantidade", "${entrega.totalSaches} ${if (entrega.totalSaches == 1) "sachê" else "sachês"}")
     Campo("Situação", Formatadores.rotuloStatus(entrega.status))
     if (entrega.tentativa > 0) Campo("Tentativa", "${entrega.tentativa}")
 }

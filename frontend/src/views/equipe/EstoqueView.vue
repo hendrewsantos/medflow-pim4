@@ -64,7 +64,7 @@ async function salvarMedicamento() {
     <button role="tab" type="button" :aria-selected="aba === 'movimentacoes'" @click="trocarAba('movimentacoes')">Movimentações</button>
   </div>
 
-  <div v-if="aba === 'medicamentos'" class="tabela-wrap">
+  <div v-if="aba === 'medicamentos'" class="tabela-wrap" tabindex="0">
     <table class="tabela">
       <thead><tr><th>Medicamento</th><th>Tarja</th><th>Categoria</th><th class="n">Físico</th><th class="n">Reservado</th><th class="n">Disponível (ciclo)</th><th class="n">Mínimo</th><th></th></tr></thead>
       <tbody>
@@ -78,7 +78,7 @@ async function salvarMedicamento() {
             <td><span class="pill" :class="m.abaixoDoMinimo ? 'pill-ruim' : 'pill-ok'">{{ m.abaixoDoMinimo ? 'Abaixo do mínimo' : 'OK' }}</span></td>
           </tr>
           <tr v-if="aberto === m.id" class="sub"><td colspan="8"><div class="stack">
-            <div class="tabela-wrap"><table class="tabela">
+            <div class="tabela-wrap" tabindex="0"><table class="tabela">
               <thead><tr><th>Lote</th><th>Fabricação</th><th>Validade</th><th class="n">Físico</th><th class="n">Reservado</th><th class="n">Disponível</th><th>Situação</th></tr></thead>
               <tbody><tr v-for="l in m.lotes" :key="l.id"><td class="mono">{{ l.numero }}</td><td>{{ dataSo(l.fabricacao) }}</td><td>{{ dataSo(l.validade) }}</td>
                 <td class="n">{{ l.quantidadeFisica }}</td><td class="n">{{ l.quantidadeReservada }}</td><td class="n">{{ l.disponivel }}</td>
@@ -90,7 +90,7 @@ async function salvarMedicamento() {
       </tbody>
     </table>
   </div>
-  <div v-else class="tabela-wrap">
+  <div v-else class="tabela-wrap" tabindex="0">
     <table class="tabela">
       <thead><tr><th>Quando</th><th>Tipo</th><th>Medicamento</th><th>Lote</th><th class="n">Qtd.</th><th>Pedido</th><th>Observação</th></tr></thead>
       <tbody><tr v-for="m in movs" :key="m.id"><td class="subtle">{{ dataHora(m.em) }}</td>
