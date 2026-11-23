@@ -39,7 +39,8 @@ s, meds = chamar("GET", "/api/medicamentos", token=carlos)
 nomes = [m["nome"] for m in meds]
 confere("paciente não vê antimicrobiano, termolábil nem controlado", [n for n in nomes if n in ("Amoxicilina", "Insulina NPH", "Clonazepam")], [])
 s, meds_eq = chamar("GET", "/api/medicamentos", token=bruno)
-confere("equipe vê os 12 itens do catálogo", len(meds_eq), 12)
+confere("equipe vê os 81 itens do catálogo", len(meds_eq), 81)
+confere("catálogo do paciente tem preço fictício em todos os itens", all(m.get("precoUnitario", 0) > 0 for m in meds), True)
 los = next(m for m in meds if m["nome"].startswith("Losartana"))
 
 s, receitas = chamar("GET", "/api/receitas/minhas", token=carlos)
@@ -50,8 +51,15 @@ box = {"receitaId": rid, "enderecoEntrega": "Rua das Acacias, 120 - Vila Mariana
 s, sim = chamar("POST", "/api/pedidos/simular", box["itens"], carlos)
 confere("simulação mostra disponibilidade", (s, sim["podeConfirmar"]), (200, True))
 s, ped = chamar("POST", "/api/pedidos", box, carlos)
-confere("confirmar Box (receita já aprovada vai direto para separação)", (s, ped.get("status")), (201, "EmSeparacao"))
+PAGAMENTO = ped.get("status") == "AguardandoPagamento"   # pagamento simulado habilitado na API
+confere("confirmar Box (reserva feita; com pagamento simulado, aguarda o pagamento)", (s, ped.get("status")), (201, "AguardandoPagamento" if PAGAMENTO else "EmSeparacao"))
 pid = ped["id"]
+if PAGAMENTO:
+    confere("pedido traz valor e prazo do pagamento", (ped["valorMedicamentos"] > 0, ped["valorEntrega"] > 0, bool(ped["pagamentoPrazoEm"])), (True, True, True))
+    s, _ = chamar("POST", f"/api/pedidos/{pid}/finalizar-box", token=bruno)
+    confere("operador não finaliza Box sem pagamento", s in (409, 422), True)
+    s, pago = chamar("POST", f"/api/pedidos/{pid}/pagamento/aprovar", token=carlos)
+    confere("aprovar pagamento (receita aprovada: segue para separação)", (s, pago.get("status")), (200, "EmSeparacao"))
 confere("reserva por lote (FEFO) registrada", len(ped["itens"][0]["lotes"]) >= 1, True)
 
 s, _ = chamar("POST", "/api/pedidos", box, carlos)
@@ -75,7 +83,7 @@ s, e = chamar("POST", f"/api/entregas/{pid}/confirmar", {"recebedor": "Carlos Me
 confere("confirmar entrega", (s, e.get("status")), (200, "Entregue"))
 
 s, det = chamar("GET", f"/api/pedidos/{pid}", token=carlos)
-confere("linha do tempo do paciente", [h["para"] for h in det["historico"]], ["Pendente", "EmSeparacao", "AguardandoEntregador", "EmRota", "Entregue"])
+confere("linha do tempo do paciente", [h["para"] for h in det["historico"]], (["AguardandoPagamento"] if PAGAMENTO else ["Pendente"]) + ["EmSeparacao", "AguardandoEntregador", "EmRota", "Entregue"])
 s, ren = chamar("GET", "/api/pedidos/proxima-renovacao", token=carlos)
 confere("próxima renovação", (s, ren["temBox"], ren["diasRestantes"]), (200, True, 30))
 
