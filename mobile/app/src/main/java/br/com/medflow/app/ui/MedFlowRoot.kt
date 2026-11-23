@@ -1,9 +1,18 @@
 package br.com.medflow.app.ui
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -25,6 +34,12 @@ fun MedFlowRoot(container: AppContainer) {
     val sessao by container.sessao.sessao.collectAsStateWithLifecycle()
     val saida: SaidaViewModel = viewModel(factory = SaidaViewModel.factory(container))
     val avisoSaida by saida.aviso.collectAsStateWithLifecycle()
+
+    var aberturaVisivel by rememberSaveable { mutableStateOf(true) }
+    if (aberturaVisivel) {
+        Abertura(onFim = { aberturaVisivel = false })
+        return
+    }
 
     val atual = sessao
     if (atual == null) {
@@ -52,7 +67,7 @@ private fun FluxoEntregador(container: AppContainer, sessao: Sessao, onSair: () 
         key = "entregas-${sessao.usuarioId}",
         factory = EntregasViewModel.factory(container),
     )
-    NavHost(navController = nav, startDestination = "lista") {
+    NavHost(navController = nav, startDestination = "lista", enterTransition = entradaDeTela(), exitTransition = saidaDeTela(), popEnterTransition = entradaDeTela(), popExitTransition = saidaDeTela()) {
         composable("lista") {
             ListaEntregasScreen(
                 vm = listaVm,
@@ -82,7 +97,7 @@ private fun FluxoPaciente(container: AppContainer, sessao: Sessao, onSair: () ->
         key = "pedidos-${sessao.usuarioId}",
         factory = PedidosViewModel.factory(container),
     )
-    NavHost(navController = nav, startDestination = "pedidos") {
+    NavHost(navController = nav, startDestination = "pedidos", enterTransition = entradaDeTela(), exitTransition = saidaDeTela(), popEnterTransition = entradaDeTela(), popExitTransition = saidaDeTela()) {
         composable("pedidos") {
             PedidosScreen(
                 vm = pedidosVm,
@@ -102,5 +117,22 @@ private fun FluxoPaciente(container: AppContainer, sessao: Sessao, onSair: () ->
             )
             LinhaDoTempoScreen(vm = vm, onVoltar = { nav.popBackStack() })
         }
+    }
+}
+
+/** Telas entram esmaecendo e deslizando de leve; com "remover animações" do sistema, só esmaecem. */
+@Composable
+private fun entradaDeTela(): AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.() -> androidx.compose.animation.EnterTransition {
+    val reduzido = movimentoReduzido()
+    return {
+        if (reduzido) fadeIn(tween(1)) else fadeIn(tween(320)) + slideInHorizontally(tween(320)) { it / 12 }
+    }
+}
+
+@Composable
+private fun saidaDeTela(): AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.() -> androidx.compose.animation.ExitTransition {
+    val reduzido = movimentoReduzido()
+    return {
+        if (reduzido) fadeOut(tween(1)) else fadeOut(tween(220)) + slideOutHorizontally(tween(220)) { -it / 12 }
     }
 }

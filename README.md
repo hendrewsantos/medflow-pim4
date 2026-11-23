@@ -68,8 +68,8 @@ Regras principais:
 |---|---|
 | ![Separação](docs/prints/30-operador-separacao.jpg) | <img src="docs/prints/40-entregador-celular.jpg" width="260" alt="Entregador no celular"> |
 
-### App Android (entregador)
-<img src="docs/prints/50-app-android-lista.png" width="240" alt="Lista de Boxes no app"> <img src="docs/prints/51-app-android-entrega.png" width="240" alt="Entrega confirmada no app">
+### App Android (entregador e paciente)
+<img src="docs/prints/52-app-android-abertura.png" width="200" alt="Abertura animada do app"> <img src="docs/prints/50-app-android-lista.png" width="200" alt="Lista de Boxes do entregador"> <img src="docs/prints/51-app-android-pagamento.png" width="200" alt="Pedido do paciente aguardando pagamento, com contagem regressiva">
 
 ## Contas de teste
 Dados fictícios, criados automaticamente quando a API roda em modo de desenvolvimento (ou com `Demo__Semear=true`).
@@ -151,7 +151,9 @@ Com o celular e o computador na **mesma rede Wi-Fi**, sem instalar nada no apare
 5. Se não abrir, o Firewall do Windows está bloqueando: libere as portas 5080 e 5173 para redes privadas (ou aceite o aviso do Windows na primeira vez).
 
 ## App Android
-Kotlin, Jetpack Compose, Retrofit, Room e WorkManager, nos perfis de entregador e paciente. Testado em emulador (Android 14) contra a API real: login, lista de Boxes, iniciar rota, abrir mapa e confirmar entrega.
+Kotlin, Jetpack Compose, Retrofit, Room e WorkManager, nos perfis de entregador e paciente. O app usa a mesma identidade visual do site (degradê, paleta e abertura animada de 3 segundos, que respeita "remover animações" do sistema). O paciente vê o pedido com a contagem regressiva do pagamento simulado; na versão de depuração há o botão "Aprovar pagamento (demonstração)". Testado em emulador (Android 14) contra a API real: login do entregador e do paciente, lista de Boxes, iniciar rota, abrir mapa, confirmar entrega, pedido aguardando pagamento e aprovação.
+
+O app só funciona com a **API e o banco de dados rodando** e alcançáveis pelo aparelho; o site (front-end) não precisa estar aberto.
 
 1. Instale o **Android Studio** e abra a pasta `mobile`.
 2. Em *Device Manager*, crie um emulador (Pixel, Android 14) e clique em **Run**. No emulador o app já aponta para a API do computador (`http://10.0.2.2:5080/`).
@@ -166,7 +168,7 @@ export MEDFLOW_TESTE_MYSQL="server=localhost;port=3307;user=root;password=troque
 dotnet test                                    # 55 testes (inclui a prova de concorrência em MySQL real)
 cd ../frontend && npm test                     # 31 testes
 python scripts/e2e_api.py                      # roteiro ponta a ponta contra a API (banco recém-criado)
-cd ../mobile && ./gradlew testDebugUnitTest    # 15 testes de unidade do app
+cd ../mobile && ./gradlew testDebugUnitTest    # 18 testes de unidade do app
 ```
 O CI do GitHub roda build, testes com MySQL, auditoria de dependências e imagens Docker a cada envio. Resultados registrados em `docs/AUDITORIA.md` e `docs/evidencias/`.
 
@@ -195,7 +197,7 @@ Tecnologias: ASP.NET Core 8, EF Core 8 (Pomelo), MySQL 8.4, JWT, Vue 3, Kotlin, 
 - Dados de saúde só com consentimento específico e versionado. O paciente exporta, corrige, revoga e exclui (anonimização) os próprios dados. O entregador não vê itens, lotes nem receita.
 
 ## Limites conhecidos
-- O app Android não foi testado em celular físico, e o perfil do paciente no app ainda não foi exercitado em emulador.
+- O app Android foi testado em emulador, não em celular físico.
 - O suporte do .NET 8 termina em 10 de novembro de 2026; a migração para uma versão LTS atual é trabalho futuro.
 - As regras sanitárias vêm de fontes documentais e não substituem o parecer de um farmacêutico responsável técnico.
 - Não há hospedagem pública; a pilha de produção foi provada localmente (`docker-compose.prod.yml`, com `deploy/.env.example`).

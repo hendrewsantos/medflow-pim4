@@ -11,9 +11,21 @@ object Formatadores {
     private val dataBr = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     private val dataHoraBr = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
 
-    /** "EmRota" -> "Em rota". */
+    private val rotulos = mapOf(
+        "AguardandoPagamento" to "Aguardando pagamento",
+        "Pendente" to "Receita em análise",
+        "EmSeparacao" to "Em separação",
+        "AguardandoEntregador" to "Aguardando entregador",
+        "EmRota" to "Em rota",
+        "Entregue" to "Entregue",
+        "Cancelado" to "Cancelado",
+        "Recusado" to "Receita recusada",
+    )
+
+    /** "EmSeparacao" -> "Em separação" (mesmos rótulos do site); status desconhecido vira texto separado por espaços. */
     fun rotuloStatus(status: String): String {
         if (status.isBlank()) return "Sem informação"
+        rotulos[status]?.let { return it }
         val separado = status.replace(Regex("(?<=[a-z])(?=[A-Z])"), " ").lowercase()
         return separado.replaceFirstChar { it.uppercase() }
     }
@@ -45,6 +57,25 @@ object Formatadores {
         }
     }
 
+    /** 60.0 -> "R$ 60,00". */
+    fun reais(valor: Double): String = "R$ " + String.format(java.util.Locale("pt", "BR"), "%,.2f", valor)
+
+    /** Milissegundos que faltam até o instante informado (0 se já passou ou se o texto não for uma data). */
+    fun milissegundosAte(iso: String?, agora: Long = System.currentTimeMillis()): Long {
+        if (iso.isNullOrBlank()) return 0L
+        return try {
+            (OffsetDateTime.parse(iso).toInstant().toEpochMilli() - agora).coerceAtLeast(0L)
+        } catch (_: DateTimeParseException) {
+            0L
+        }
+    }
+
+    /** 143000 -> "02:23". */
+    fun contagem(milissegundos: Long): String {
+        val total = (milissegundos.coerceAtLeast(0L) + 999L) / 1000L
+        return "%02d:%02d".format(total / 60, total % 60)
+    }
+
     /** Mantém só dígitos e "+" para o esquema tel:. */
     fun telefoneParaDiscagem(telefone: String): String = telefone.filter { it.isDigit() || it == '+' }
 }
@@ -61,4 +92,5 @@ object Validacoes {
 object StatusPedido {
     const val AGUARDANDO_ENTREGADOR = "AguardandoEntregador"
     const val EM_ROTA = "EmRota"
+    const val AGUARDANDO_PAGAMENTO = "AguardandoPagamento"
 }

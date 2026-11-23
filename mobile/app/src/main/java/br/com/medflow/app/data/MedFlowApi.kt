@@ -32,4 +32,8 @@ interface MedFlowApi {
 
     @GET("api/pedidos/{id}")
     suspend fun pedido(@Path("id") id: Int): PedidoDto
+
+    /** Só existe na demonstração (a API responde 404 fora dela). */
+    @POST("api/pedidos/{id}/pagamento/aprovar")
+    suspend fun aprovarPagamento(@Path("id") id: Int): PedidoDto
 }

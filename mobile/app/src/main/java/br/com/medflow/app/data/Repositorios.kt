@@ -218,5 +218,7 @@ class PedidosRepository(private val api: MedFlowApi, db: MedFlowDb) {
 
     suspend fun detalhe(id: Int): Resultado<PedidoDto> = chamar { api.pedido(id) }
 
+    suspend fun aprovarPagamento(id: Int): Resultado<PedidoDto> = chamar { api.aprovarPagamento(id) }
+
     suspend fun proximaRenovacao(): Resultado<ProximaRenovacaoDto> = chamar { api.proximaRenovacao() }
 }

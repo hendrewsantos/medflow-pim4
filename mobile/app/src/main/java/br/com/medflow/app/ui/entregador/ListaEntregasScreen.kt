@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,6 +24,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import br.com.medflow.app.ui.entradaSuave
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -97,8 +99,9 @@ fun ListaEntregasScreen(
                         )
                     }
                 }
-                items(lista, key = { it.pedidoId }) { entrega ->
+                itemsIndexed(lista, key = { _, x -> x.pedidoId }) { i, entrega ->
                     CartaoEntrega(
+                        modifier = Modifier.entradaSuave(i),
                         entrega = entrega,
                         aguardandoEnvio = entrega.pedidoId in estado.pedidosPendentes,
                         onClick = { onAbrir(entrega.pedidoId) },
@@ -110,7 +113,7 @@ fun ListaEntregasScreen(
 }
 
 @Composable
-private fun CartaoEntrega(entrega: EntregaEntity, aguardandoEnvio: Boolean, onClick: () -> Unit) {
+private fun CartaoEntrega(entrega: EntregaEntity, aguardandoEnvio: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val situacao = Formatadores.rotuloStatus(entrega.status)
     val descricao = buildString {
         append("Entrega ${entrega.codigo}. Paciente ${entrega.paciente}. Endereço ${entrega.endereco}. ")
@@ -119,7 +122,7 @@ private fun CartaoEntrega(entrega: EntregaEntity, aguardandoEnvio: Boolean, onCl
         append(" Toque para abrir.")
     }
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClickLabel = "Abrir detalhes da entrega", onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = descricao },

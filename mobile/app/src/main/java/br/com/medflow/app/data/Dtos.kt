@@ -57,6 +57,8 @@ data class PedidoResumoDto(
     val criadoEm: String = "",
     val atualizadoEm: String = "",
     val totalItens: Int = 0,
+    val valorTotal: Double = 0.0,
+    val pagamentoPrazoEm: String? = null,
 )
 
 @Serializable
@@ -83,6 +85,10 @@ data class PedidoDto(
     val atualizadoEm: String = "",
     val itens: List<PedidoItemDto> = emptyList(),
     val historico: List<HistoricoDto> = emptyList(),
+    val valorMedicamentos: Double = 0.0,
+    val valorEntrega: Double = 0.0,
+    val pagamentoPrazoEm: String? = null,
+    val pagoEm: String? = null,
 )
 
 @Serializable

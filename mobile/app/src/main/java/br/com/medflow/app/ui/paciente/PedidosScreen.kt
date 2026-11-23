@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -19,6 +20,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import br.com.medflow.app.ui.entradaSuave
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -70,8 +72,8 @@ fun PedidosScreen(
             if (estado.pedidos.isEmpty()) {
                 item { Text("Você ainda não tem pedidos.", style = MaterialTheme.typography.bodyLarge) }
             }
-            items(estado.pedidos, key = { it.id }) { pedido ->
-                CartaoPedido(pedido) { onAbrir(pedido.id) }
+            itemsIndexed(estado.pedidos, key = { _, p -> p.id }) { i, pedido ->
+                CartaoPedido(pedido, Modifier.entradaSuave(i)) { onAbrir(pedido.id) }
             }
         }
     }
@@ -112,12 +114,12 @@ private fun CartaoRenovacao(renovacao: ProximaRenovacaoDto?) {
 }
 
 @Composable
-private fun CartaoPedido(pedido: PedidoEntity, onClick: () -> Unit) {
+private fun CartaoPedido(pedido: PedidoEntity, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val situacao = Formatadores.rotuloStatus(pedido.status)
     val descricao = "Pedido número ${pedido.id}. Situação: $situacao. " +
         "Atualizado em ${Formatadores.dataHora(pedido.atualizadoEm)}. Toque para ver a linha do tempo."
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClickLabel = "Ver linha do tempo do pedido", onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = descricao },

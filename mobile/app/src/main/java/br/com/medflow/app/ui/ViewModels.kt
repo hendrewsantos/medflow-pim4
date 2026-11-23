@@ -269,6 +269,8 @@ data class LinhaDoTempoUiState(
     val carregando: Boolean = true,
     val pedido: PedidoDto? = null,
     val erro: String? = null,
+    val pagando: Boolean = false,
+    val aviso: String? = null,
 )
 
 class LinhaDoTempoViewModel(private val repo: PedidosRepository, private val pedidoId: Int) : ViewModel() {
@@ -292,6 +294,17 @@ class LinhaDoTempoViewModel(private val repo: PedidosRepository, private val ped
                         r.mensagem
                     },
                 )
+            }
+        }
+    }
+
+    /** Pagamento simulado (só na demonstração): representa o retorno do meio de pagamento. */
+    fun aprovarPagamento() {
+        viewModelScope.launch {
+            _estado.value = _estado.value.copy(pagando = true, aviso = null)
+            when (val r = repo.aprovarPagamento(pedidoId)) {
+                is Resultado.Ok -> _estado.value = LinhaDoTempoUiState(carregando = false, pedido = r.valor)
+                is Resultado.Falha -> _estado.value = _estado.value.copy(pagando = false, aviso = r.mensagem)
             }
         }
     }
