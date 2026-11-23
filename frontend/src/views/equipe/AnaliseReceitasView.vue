@@ -96,7 +96,7 @@ async function recusar() {
 <template>
   <div v-if="!pendentes.length" class="vazio"><Icone nome="ok" /><h3>Nenhuma receita aguardando análise</h3><p>Novas receitas aparecem aqui assim que o paciente envia.</p></div>
   <template v-else>
-    <div class="cabecalho-pagina"><div><h1>Análise de receitas</h1><p>Nenhum pedido segue para separação sem receita aprovada por farmacêutico. Esta etapa não é automatizada de propósito: é aqui que mora o risco clínico.</p></div></div>
+    <div class="cabecalho-pagina"><div><h1>Análise de receitas</h1><p>Nenhum pedido segue para separação sem receita aprovada por farmacêutico.</p></div></div>
     <div class="grid-lista-detalhe">
       <section class="tabela-wrap" aria-label="Receitas pendentes">
         <table class="tabela"><thead><tr><th>Paciente</th><th>Enviada</th></tr></thead>
