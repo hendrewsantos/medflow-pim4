@@ -101,8 +101,8 @@ const EQUIPE = [
   { nome: 'Gabriel Pimenta', linkedin: 'https://www.linkedin.com/in/gabriel-pimenta-790276360/' },
   { nome: 'Hendrew Braz', linkedin: 'https://www.linkedin.com/in/hendrew-santos2530' },
   { nome: 'Manuel Douglas', linkedin: 'https://www.linkedin.com/in/mdouglas12/' },
-  { nome: 'Matheus Renato', linkedin: null },
-  { nome: 'Matheus Ribeiro', linkedin: null },
+  { nome: 'Matheus Renato', linkedin: 'https://www.linkedin.com/in/matheus-estevo-281582357/' },
+  { nome: 'Matheus Ribeiro', linkedin: 'https://www.linkedin.com/in/matheus-santos-3733923a8/' },
 ]
 
 const sem = computed(() => ui.prefs.reduzirMovimento || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches))
