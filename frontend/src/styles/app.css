@@ -141,7 +141,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-bottom: 1px solid var(--side-2);
 }
 .demo-bar strong { font-family: var(--f-display); font-weight: 600; }
-.demo-bar .demo-tag { background: var(--tag-bg); color: var(--tag-ink); border-radius: 999px; padding: 1px 9px; font-weight: 700; font-size: var(--t-xs); letter-spacing: .04em; text-transform: uppercase; }
+.demo-bar .demo-tag { font-weight: 700; font-size: var(--t-sm); }
 .demo-bar .personas { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
 .demo-bar button {
   border: 1px solid var(--side-2); background: transparent; color: var(--side-ink); border-radius: 999px; padding: 3px 11px; cursor: pointer; font-size: var(--t-sm);
@@ -281,7 +281,7 @@ textarea.input { min-height: 84px; resize: vertical; }
 /* ── Tabelas ── */
 .tabela-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
 table.tabela { width: 100%; border-collapse: collapse; font-size: var(--t-md); }
-.tabela th { text-align: left; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-weight: 700; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; }
+.tabela th { text-align: left; font-size: var(--t-xs);  color: var(--ink-3); font-weight: 700; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; }
 .tabela td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 .tabela tr:last-child td { border-bottom: 0; }
 .tabela td.n, .tabela th.n { text-align: right; font-variant-numeric: tabular-nums; }
@@ -329,7 +329,7 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: var(--t-md); }
 .organizador { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .compartimento { border: 1.5px dashed var(--line-strong); border-radius: 12px; padding: 12px; background: var(--surface); min-width: 0; }
 .compartimento .hora { font-family: var(--f-mono); font-size: 1.25rem; font-weight: 600; color: var(--brand); }
-.compartimento .periodo { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3); font-weight: 700; }
+.compartimento .periodo { font-size: var(--t-xs);  color: var(--ink-3); font-weight: 700; }
 .compartimento ul { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: var(--t-sm); }
 .compartimento li .dose { color: var(--ink-3); white-space: nowrap; }
 .compartimento li::before { content: "●"; color: var(--pulse); margin-right: 6px; font-size: .7em; vertical-align: 2px; }
@@ -444,7 +444,7 @@ pre.json { background: var(--surface-2); border: 1px solid var(--line); border-r
   background: var(--side); color: var(--side-ink); padding: 48px max(32px, env(safe-area-inset-left, 0px)) 40px; display: flex; flex-direction: column; gap: 28px; justify-content: space-between;
 }
 .acesso .lado-marca h1 { font-size: clamp(1.9rem, 3.2vw, 2.7rem); line-height: 1.12; max-width: 18ch; }
-.acesso .lado-marca h1 em { font-style: normal; color: var(--pulse); }
+.acesso .lado-marca h1 em { font-style: normal; }
 .acesso .lado-marca p { color: var(--side-ink-2); max-width: 46ch; }
 .acesso .pulso { width: 100%; max-width: 420px; height: 46px; color: var(--pulse); }
 .acesso .lado-form { padding: 48px max(24px, env(safe-area-inset-right, 0px)) 40px max(24px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; justify-content: center; gap: 22px; max-width: 560px; width: 100%; margin: 0 auto; }
@@ -453,7 +453,7 @@ pre.json { background: var(--surface-2); border: 1px solid var(--line); border-r
 .persona:hover { border-color: var(--brand); }
 .persona strong { font-family: var(--f-display); font-weight: 600; }
 .persona span { font-size: var(--t-xs); color: var(--ink-3); }
-.persona .perfil { font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--brand); }
+.persona .perfil { font-size: var(--t-sm); font-weight: 700; color: var(--ink-2); }
 @media (max-width: 860px) {
   .acesso { grid-template-columns: minmax(0, 1fr); }
   .acesso .lado-marca { padding: 28px max(16px, env(safe-area-inset-left, 0px)) 24px; gap: 14px; }
@@ -479,13 +479,13 @@ pre.json { background: var(--surface-2); border: 1px solid var(--line); border-r
 .pub-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px max(16px, env(safe-area-inset-left, 0px)); background: var(--surface); border-bottom: 1px solid var(--line); }
 .pub-marca { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-family: var(--f-display); font-weight: 600; font-size: var(--t-lg); }
 .pub-marca img { width: 36px; height: 36px; }
-.pub-marca small { display: block; font-size: var(--t-xs); font-weight: 400; color: var(--ink-3); letter-spacing: .08em; text-transform: uppercase; }
+.pub-marca small { display: block; font-size: var(--t-xs); font-weight: 400; color: var(--ink-3);  }
 .pub-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .pub-nav .btn { text-decoration: none; }
 .pub-conteudo { flex: 1; width: 100%; max-width: 1040px; margin: 0 auto; padding: 32px max(16px, env(safe-area-inset-left, 0px)) 48px; display: flex; flex-direction: column; gap: 40px; }
 .pub-hero { display: flex; flex-direction: column; gap: 18px; max-width: 720px; padding: 24px 0 8px; }
 .pub-hero h1 { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.1; }
-.pub-hero h1 em { font-style: normal; color: var(--brand); }
+.pub-hero h1 em { font-style: normal; }
 .pub-hero > p { font-size: var(--t-lg); color: var(--ink-2); }
 .pub-hero .btn, .pub-chamada .btn { text-decoration: none; }
 .pub-secao { display: flex; flex-direction: column; gap: 16px; }

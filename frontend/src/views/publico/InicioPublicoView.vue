@@ -25,8 +25,7 @@ const ACESSIBILIDADE = [
 <template>
   <PublicoLayout>
     <section class="pub-hero">
-      <span class="eyebrow">Tratamento contínuo, sem interrupção</span>
-      <h1>A dose certa, no horário certo, <em>na sua porta.</em></h1>
+      <h1>A dose certa, no horário certo, na sua porta.</h1>
       <p>O MedFlow organiza os seus medicamentos de uso contínuo em sachês separados por horário, confere a receita com uma farmacêutica e entrega em casa. Você não precisa lembrar de renovar: avisamos antes.</p>
       <div class="row">
         <RouterLink class="btn btn-primario" :to="{ name: 'cadastro' }">Criar conta</RouterLink>
@@ -39,8 +38,7 @@ const ACESSIBILIDADE = [
       <h2 id="h-como">Como funciona</h2>
       <ol class="pub-passos">
         <li v-for="([titulo, texto], i) in PASSOS" :key="titulo" class="card">
-          <span class="pub-num" aria-hidden="true">{{ i + 1 }}</span>
-          <h3>{{ titulo }}</h3>
+          <h3>{{ i + 1 }}. {{ titulo }}</h3>
           <p class="muted">{{ texto }}</p>
         </li>
       </ol>
